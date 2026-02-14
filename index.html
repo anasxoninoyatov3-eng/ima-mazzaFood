@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Mazza Food — Qo'qonda eng mazali va tez tayyorlanadigan fast food. Burger, pitsa, hotdog va lavashlar yetkazib berish xizmati.">
+    <meta name="keywords"
+        content="fast food, burger, pizza, lavash, qo'qon, yetkazib berish, mazza food, online buyurtma">
+    <meta name="theme-color" content="#ffc107">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="./images/image.png">
+    <title>Mazza Food — Tez va Mazali</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+</head>
+
+<body>
+    <header class="site-header" role="banner">
+        <div class="container header-inner">
+            <div class="brand">
+                <img src="images/image.png" alt="Mazza icon" class="brand-icon" aria-hidden="true">
+                <div class="brand-text">
+                    <a href="#" aria-label="Mazza Food home" class="logo">Mazza<span>Food</span></a>
+                    <p class="tag">Tez. Yangi. Mazali.</p>
+                </div>
+            </div>
+
+            <nav class="nav" role="navigation" aria-label="Main navigation">
+                <ul>
+                    <li><a href="#menu">Menyu</a></li>
+                    <li><a href="#about">Haqida</a></li>
+                    <li><a href="#contact">Aloqa</a></li>
+                </ul>
+            </nav>
+
+            <button id="burgerBtn" class="burger-btn" aria-label="Open menu" aria-expanded="false"
+                aria-controls="mobileNav">
+
+            </button>
+
+            <div class="header-actions">
+                <button id="accountBtn" class="cart-btn" aria-label="Account items" title="General account">
+                    👤 <span id="accountCount" class="cart-count" aria-hidden="true">0</span>
+                </button>
+
+                <button id="cartBtn" class="cart-btn" aria-haspopup="dialog" aria-controls="cartModal"
+                    aria-label="Open cart">
+                    🛒 <span id="cartCount" class="cart-count" aria-hidden="true">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Auth modal: Sign in / Sign up -->
+    <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="authTitle">
+        <div class="modal-panel">
+            <header class="modal-header">
+                <h3 id="authTitle">Account</h3>
+                <button id="closeAuth" class="btn icon" aria-label="Close auth">✕</button>
+            </header>
+            <div class="modal-body">
+                <div class="auth-tabs">
+                    <button id="tabSignIn" class="btn">Sign In</button>
+                    <button id="tabSignUp" class="btn">Sign Up</button>
+                </div>
+
+                <form id="signInForm" class="auth-form" style="margin-top:12px">
+                    <label for="siPhone">Phone or username</label>
+                    <input id="siPhone" type="text" required>
+                    <label for="siPassword">Password</label>
+                    <input id="siPassword" type="password" required>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                        <button type="button" id="siCancel" class="btn">Cancel</button>
+                        <button type="submit" class="btn primary">Sign In</button>
+                    </div>
+                </form>
+
+                <form id="signUpForm" class="auth-form" style="display:none;margin-top:12px">
+                    <label for="suName">Full name</label>
+                    <input id="suName" type="text" required>
+                    <label for="suPhone">Phone</label>
+                    <input id="suPhone" type="text" required>
+                    <label for="suPassword">Password</label>
+                    <input id="suPassword" type="password" required>
+                    <label for="suPassword2">Confirm password</label>
+                    <input id="suPassword2" type="password" required>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                        <button type="button" id="suCancel" class="btn">Cancel</button>
+                        <button type="submit" class="btn primary">Create Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <nav id="mobileNav" class="mobile-nav" aria-hidden="true" aria-label="Mobile navigation">
+        <ul>
+            <li><a href="#menu" class="mobile-link">Menu</a></li>
+            <li><a href="#about" class="mobile-link">Haqida</a></li>
+            <li><a href="#contact" class="mobile-link">Aloqa</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-inner">
+                <div class="hero-text">
+                    <h1>Mazza Food-ga xush kelibsiz</h1>
+                    <p>Sevgi bilan tayyorlangan mazali tez ovqat. Burgerlar, o'ramlar, qanotlar va boshqalar - bir necha
+                        daqiqada tayyor.</p>
+                    <a class="btn primary" href="#menu">Hoziroq buyurtma bering</a>
+                </div>
+                <div class="hero-art" aria-hidden="true">
+                    <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1000&q=80"
+                        alt="Delicious burger" class="hero-img"
+                        style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                </div>
+        </section>
+
+        <section class="features container" aria-label="Highlights">
+            <div class="features-grid">
+                <div class="feature-card" tabindex="0" aria-describedby="feat-delivery">
+                    <div class="feature-inner">
+                        <div class="feature-icon">🚚</div>
+                        <h4>Yetkazib berish</h4>
+                        <p id="feat-delivery">30 daqiqadan kam vaqt ichida yetkazib berish.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card" tabindex="0" aria-describedby="feat-menu">
+                    <div class="feature-inner">
+                        <div class="feature-icon">📋</div>
+                        <h4>Menu</h4>
+                        <p id="feat-menu">Mazza Foodning menyusi.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card" tabindex="0" aria-describedby="feat-about">
+                    <div class="feature-inner">
+                        <div class="feature-icon">ℹ️</div>
+                        <h4>Haqida</h4>
+                        <p id="feat-about">Bizning istoriyamiz va maxsulatlarimiz haqida.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="menu" class="menu container" aria-labelledby="menu-heading">
+            <h2 id="menu-heading">Menyu</h2>
+            <p class="lead">Qo'l bilan tanlangan sevimlilar — tez tayyor.</p>
+
+            <!-- Big menu image (created) -->
+
+            <div class="menu-grid" id="menuGrid">
+                <!-- Menu items: JS will not be required to render these, but buttons include data attributes used by JS -->
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80"
+                            alt="Fried chicken illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Kfc Burger</h3>
+                        <p class="price">28000 som</p>
+                        <p class="desc">Mol go'shti kotleti, marul, pomidor, xantal va maxsus sous bilan.</p>
+                        <button class="btn add-btn" data-id="b1" data-name="Classic Burger"
+                            data-price="28000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80"
+                            alt="Chicken burger illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Chicken Burger</h3>
+                        <p class="price">28000 som</p>
+                        <p class="desc">Tovuq kotleti, marul, pomidor, xantal va maxsus sous bilan.</p>
+                        <button class="btn add-btn" data-id="b2" data-name="Chicken Burger"
+                            data-price="28000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80"
+                            alt="Cheese burger illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Kfc Chesee Burger</h3>
+                        <p class="price">32000 som</p>
+                        <p class="desc">Pishloqli burger — tovuq kotleti, pishloq, marul va maxsus sous bilan.</p>
+                        <button class="btn add-btn" data-id="b3" data-name="Kfc Chesee Burger"
+                            data-price="32000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?auto=format&fit=crop&w=800&q=80"
+                            alt="Portion of chicken"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Kfc 1(portsiya)</h3>
+                        <p class="price">25000 som</p>
+                        <p class="desc">Issiq va mazali tovuq porsiyasi — ajoyib ta'm bilan.</p>
+                        <button class="btn add-btn" data-id="b4" data-name="Kfc 1(portsiya)"
+                            data-price="25000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80"
+                            alt="Chicken 1kg"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Kfc (1kg)</h3>
+                        <p class="price">25000 som</p>
+                        <p class="desc">1kg tovuq — oilaviy porsiya, juda qulay.</p>
+                        <button class="btn add-btn" data-id="b5" data-name="Kfc (1kg)" data-price="25000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzuBJlspOZ_VPWNMaJo_jxgYb6bALMhrQN3w&s"
+                            alt="Sharik illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Sharik</h3>
+                        <p class="price">18000 som</p>
+                        <p class="desc">Sharik — mazali ta'm bilan to'ldirilgan fastfood.</p>
+                        <button class="btn add-btn" data-id="b6" data-name="Sharik" data-price="18000">Add</button>
+                    </div>
+                </article>
+
+
+                <article class="card">
+                    <div class="card-media fries" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=800&q=80"
+                            alt="Fries illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Fri</h3>
+                        <p class="price">18000 som</p>
+                        <p class="desc">Oltin kartoshka mukammallik bilan pishirilgan.</p>
+                        <button class="btn add-btn" data-id="f1" data-name="Fries" data-price="18000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media burger" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=800&q=80"
+                            alt="Rustic fries illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Fri (derevenskiy)</h3>
+                        <p class="price">18000 som</p>
+                        <p class="desc">Derevenskiy kartoshka mukammallik bilan pishirilgan.</p>
+                        <button class="btn add-btn" data-id="b5" data-name="Fri (derevenskiy)"
+                            data-price="18000">Add</button>
+                    </div>
+                </article>
+
+
+                <article class="card">
+                    <div class="card-media wrap" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80"
+                            alt="Mazza pizza illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Mazza Pizza</h3>
+                        <label for="size-w1" class="sr-only">Pizza o'lchami</label>
+                        <select id="size-w1" class="size-select" aria-label="Pizza o'lchami">
+                            <option value="140000" data-label="Katta">Katta — 140000 som</option>
+                            <option value="120000" data-label="O'rtacha" selected>O'rtacha — 120000 som</option>
+                            <option value="100000" data-label="Kichik">Kichik — 100000 som</option>
+                        </select>
+                        <p class="desc">Mazza pizza — yangi sous, pishloq va tanlangan qo'shimchalar bilan.</p>
+                        <button class="btn add-btn" data-id="w1" data-name="Mazza Pizza"
+                            data-price="120000">Add</button>
+                    </div>
+                </article>
+                <article class="card">
+                    <div class="card-media wrap" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80"
+                            alt="Maxsus pizza illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Maxsus Pizza</h3>
+                        <label for="size-w2" class="sr-only">Pizza o'lchami</label>
+                        <select id="size-w2" class="size-select" aria-label="Pizza o'lchami">
+                            <option value="130000" data-label="Katta">Katta — 130000 som</option>
+                            <option value="110000" data-label="O'rtacha" selected>O'rtacha — 110000 som</option>
+                            <option value="90000" data-label="Kichik">Kichik — 90000 som</option>
+                        </select>
+                        <p class="desc">Maxsus pizza — eng yaxshi ingredientlar va tanlangan qo'shimchalar bilan.</p>
+                        <button class="btn add-btn" data-id="w2" data-name="Maxsus Pizza"
+                            data-price="110000">Add</button>
+                    </div>
+                </article>
+
+
+                <article class="card">
+                    <div class="card-media hotdog" aria-hidden="true"><img
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHeLkcqgOn3kYqsOfP0m7pfCNh2OOQXuL4hg&s"
+                            alt="Hotdog illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Hotdog</h3>
+                        <p class="price">22000 som</p>
+                        <p class="desc">An'anaviy hotdog — xantal va ketchup bilan.</p>
+                        <button class="btn add-btn" data-id="hd1" data-name="Hotdog" data-price="22000">Add</button>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-media lavash" aria-hidden="true"><img
+                            src="https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80"
+                            alt="Lavash wrap illustration"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Lavash</h3>
+                        <p class="price">39000 som</p>
+                        <p class="desc">Issiq lavash — yangi to'ldirmalar bilan.</p>
+                        <button class="btn add-btn" data-id="lv1" data-name="Lavash" data-price="30000">Add</button>
+                    </div>
+                </article>
+            </div>
+        </section> 
+        <div class="sections-card-ima">
+            <section id="about" class="about container">
+                <h2>Biz haqida</h2>
+                <p>Mazza Food — bu o'zbek iste'molchilari uchun yaratilgan, qo'shimcha qo'shimcha bilan ta'mlantirilgan
+                    taomlar bilan tanishuvchi joy. Biz har bir taomni mukammallik bilan pishirib, mijozlarga eng yaxshi
+                    tajriba bilan xizmat ko'rsatamiz.</p>
+            </section>
+            <section id="contact" class="contact container">
+                <h2>Bog'lanish</h2>
+                <p>Telefon: +998 97 201 10 10</p>
+                <p>Manzil: Qo'qon shahri, charxiy ko'cha, non markazni yonida</p>
+            </section>
+
+            <section id="reviews" class="reviews container" aria-labelledby="reviews-heading">
+                <h2 id="reviews-heading">Mijozlar fikrlari</h2>
+                <form id="reviewForm" class="review-form" aria-label="Leave a review">
+                    <div class="form-row">
+                        <input type="text" id="reviewName" placeholder="Ismingiz" required>
+                        <select id="reviewRating" required>
+                            <option value="5">5 — A'lo</option>
+                            <option value="4">4 — Yaxshi</option>
+                            <option value="3">3 — O'rtacha</option>
+                            <option value="2">2 — Yomon</option>
+                            <option value="1">1 — Juda yomon</option>
+                        </select>
+                    </div>
+                    <textarea id="reviewText" placeholder="Fikringizni yozing..." rows="3" required></textarea>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary">Fikrni yuborish</button>
+                    </div>
+                </form>
+
+                <ul id="reviewsList" class="reviews-list" aria-live="polite"></ul>
+            </section>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p>&copy; <span id="year"></span> Mazza Food. Barcha huquqlar himoyalangan.</p>
+        </div>
+    </footer>
+
+    <section id="reviews" class="reviews container" aria-labelledby="reviews-heading" style="display: none;">
+        <!-- Moved inside main -->
+    </section>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cartTitle">
+        <div class="modal-panel">
+            <header class="modal-header">
+                <h3 id="cartTitle">Savatchangiz</h3>
+                <button id="closeCart" class="btn icon" aria-label="Close cart">✕</button>
+            </header>
+
+            <div class="modal-body">
+                <ul id="cartList" class="cart-list" aria-live="polite"></ul>
+            </div>
+
+            <footer class="modal-footer">
+                <p class="cart-total">Jami: <strong id="cartTotal">0.00 so'm</strong></p>
+                <div class="modal-actions">
+                    <button id="clearCart" class="btn">Tozalash</button>
+                    <button id="checkout" class="btn primary">Buyurtma berish</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Order Modal (checkout form) -->
+    <div id="orderModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="orderTitle">
+        <div class="modal-panel">
+            <header class="modal-header">
+                <h3 id="orderTitle">Buyurtmani joylashtirish</h3>
+                <button id="closeOrder" class="btn icon" aria-label="Close order form">✕</button>
+            </header>
+
+            <div class="modal-body">
+                <form id="orderForm">
+                    <div id="orderItems" class="order-items"></div>
+
+                    <label for="customerName">Ismiz</label>
+                    <input id="customerName" name="name" type="text" required>
+
+                    <label for="customerPhone">Telefon</label>
+                    <input id="customerPhone" name="phone" type="tel" required>
+
+                    <label for="customerAddress">Manzil</label>
+                    <input id="customerAddress" name="address" type="text" required>
+
+                    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+                        <button type="button" id="orderCancel" class="btn">Bekor qilish</button>
+                        <button type="submit" class="btn primary">Buyurtmani yuborish</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
