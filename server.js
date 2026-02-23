@@ -1,10 +1,12 @@
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
 
 // Serve static files (if you want to host frontend from same server)
@@ -20,34 +22,56 @@ app.post('/api/send-order', async (req, res) => {
     const { order } = req.body || {};
     if (!order || !order.name || !order.phone) return res.status(400).json({ ok: false, error: 'Missing order data' });
 
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID; // target user/chat
-    if (!BOT_TOKEN || !CHAT_ID) return res.status(500).json({ ok: false, error: 'Telegram credentials not configured' });
+    const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+    // Agar bir nechta odamga yubormoqchi bo'lsangiz, ID larni vergul bilan ajratib yozing
+    // Masalan: ["8283401187", "9988776655"]
+    const CHAT_IDS = ["8283401187"]; 
 
-    // Build message text (simple, plain text)
-    let text = `📦 New order received\nID: ${order.id || 'n/a'}\nName: ${order.name}\nPhone: ${order.phone}\nAddress: ${order.address || '-'}\n\nItems:\n`;
+    if (!BOT_TOKEN || CHAT_IDS.length === 0) return res.status(500).json({ ok: false, error: 'Telegram credentials not configured' });
+
+    // Build message text (HTML)
+    let text = `<b>📦 Yangi buyurtma!</b>\n\n`;
+    text += `🆔 <b>ID:</b> ${order.id || 'n/a'}\n`;
+    text += `👤 <b>Mijoz:</b> ${order.name}\n`;
+    text += `📞 <b>Telefon:</b> ${order.phone}\n`;
+    text += `📍 <b>Manzil:</b> ${order.address || '-'}\n\n`;
+    text += `<b>🛒 Buyurtma tarkibi:</b>\n`;
+
     try {
       const items = order.items || {};
       Object.keys(items).forEach(k => {
         const it = items[k];
-        text += `• ${it.name} × ${it.qty} — ${it.price} each\n`;
+        text += `▫️ ${it.name} × ${it.qty} = ${it.price * it.qty} so'm\n`;
       });
     } catch (e) {
-      text += '(could not parse items)\n';
+      text += '(mahsulotlarni o\'qib bo\'lmadi)\n';
     }
-    text += `\nTotal: ${order.total || 0}\nTime: ${new Date(order.ts || Date.now()).toLocaleString()}`;
+
+    const delivery = order.delivery || {};
+    const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'Standard');
+    text += `\n🚚 <b>Yetkazib berish:</b> ${deliveryMethod}`;
+    if (delivery.fee) text += ` (${delivery.fee} so'm)`;
+
+    text += `\n\n💰 <b>Jami:</b> ${order.total || 0} so'm`;
+    text += `\n🕒 <b>Vaqt:</b> ${new Date(order.ts || Date.now()).toLocaleString()}`;
 
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    const resp = await axios.post(url, {
-      chat_id: CHAT_ID,
-      text,
-      parse_mode: 'HTML'
+    
+    // Send to all CHAT_IDS
+    const sendPromises = CHAT_IDS.map(chatId => {
+      return axios.post(url, {
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML'
+      }).catch(err => {
+        console.error(`Failed to send to ${chatId}:`, err.message);
+        return null;
+      });
     });
 
-    if (resp && resp.data && resp.data.ok) {
-      return res.json({ ok: true, telegram: resp.data });
-    }
-    return res.status(500).json({ ok: false, telegram: resp.data || null });
+    await Promise.all(sendPromises);
+
+    return res.json({ ok: true, sent_to: CHAT_IDS.length });
   } catch (err) {
     console.error('send-order error:', err && err.message || err);
     return res.status(500).json({ ok: false, error: (err && err.message) || String(err) });

@@ -608,8 +608,8 @@ body {
 
 .modal-panel {
     background: #fff;
-    width: 90%;
-    max-width: 500px;
+    width: 94%;
+    max-width: 760px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     display: flex;
@@ -627,9 +627,9 @@ body {
 .order-items {
     background: #fff7f2;
     border: 1px dashed rgba(255, 107, 53, 0.12);
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
 }
 
 .order-item {
@@ -643,6 +643,51 @@ body {
 .order-item:last-child {
     border-bottom: none;
 }
+
+.order-item .name {
+    color: var(--muted);
+}
+.order-item .price {
+    color: var(--dark);
+    font-weight: 700;
+}
+
+/* Order modal grid layout for larger screens */
+.order-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: 18px;
+    align-items: start;
+}
+
+.order-modal-grid .summary {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.summary .summary-row.total {
+    font-size: 1.05rem;
+    font-weight: 800;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(0,0,0,0.06);
+}
+
+.delivery-label { font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+
+#deliveryFeeRow { padding-top: 8px; }
+
+#grandTotalRow { margin-top: 8px; font-weight: 800; }
 
 .modal-body input[type="text"],
 .modal-body input[type="tel"],
@@ -698,6 +743,12 @@ body {
     .modal-actions .btn {
         width: 100%;
         min-width: 0;
+    }
+
+    /* collapse order modal grid to single column on small screens */
+    .order-modal-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 }
 

@@ -319,98 +319,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Order modal handlers
     function populateOrderForm() {
+        // Build two-column order layout: left = items + delivery options, right = summary
         orderItemsEl.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'order-modal-grid';
+        const left = document.createElement('div'); left.className = 'order-col-left';
+        const right = document.createElement('div'); right.className = 'summary';
+        grid.appendChild(left); grid.appendChild(right);
+
+        // Populate items
         let total = 0;
         Object.keys(cart).forEach(id => {
             const it = cart[id];
             const row = document.createElement('div');
             row.className = 'order-item';
-            row.innerHTML = `<div>${escapeHtml(it.name)} <small>× ${it.qty}</small></div><div><strong>${formatPrice(it.price * it.qty)}</strong></div>`;
-            orderItemsEl.appendChild(row);
+            row.innerHTML = `<div class="name">${escapeHtml(it.name)} <small>× ${it.qty}</small></div><div class="price">${formatPrice(it.price * it.qty)}</div>`;
+            left.appendChild(row);
             total += it.price * it.qty;
-        })
-        const totalRow = document.createElement('div');
-        totalRow.className = 'order-item';
-        totalRow.id = 'subtotalRow';
-        totalRow.innerHTML = `<div><strong>Total</strong></div><div><strong>${formatPrice(total)}</strong></div>`;
-        orderItemsEl.appendChild(totalRow);
+        });
 
-        // Delivery options and fee calculation
-        // Ensure helper functions exist for calculation and UI updates
-        // delivery methods: standard, express, pickup
+        // Subtotal row (left)
+        const subtotalRow = document.createElement('div');
+        subtotalRow.className = 'order-item';
+        subtotalRow.id = 'subtotalRow';
+        subtotalRow.innerHTML = `<div><strong>Total</strong></div><div><strong>${formatPrice(total)}</strong></div>`;
+        left.appendChild(subtotalRow);
+
+        // Summary panel initial content
+        right.innerHTML = `
+            <div style="font-weight:700;margin-bottom:8px">Yetkazib berish</div>
+            <div class="summary-body">
+                <div class="summary-row"><div>Yetkazib berish:</div><div id="deliverySummary">—</div></div>
+                <div class="summary-row total"><div>Jami (yetkazib berish bilan)</div><div id="grandTotalRow"><strong>${formatPrice(total)}</strong></div></div>
+            </div>
+        `;
+
+        // Delivery calculation helper
         function calculateDelivery(subtotal, method) {
-            // subtotal expected as number
             const m = method || 'standard';
-            let fee = 0;
-            let eta = 0; // minutes
-            if (m === 'pickup') {
-                fee = 0; eta = 10;
-            } else if (m === 'express') {
-                // express costs 5% of subtotal, at least 5000
-                fee = Math.max(5000, Math.round(subtotal * 0.05));
-                eta = 20;
-            } else {
-                // standard
-                // free delivery for large orders, otherwise fixed fee
-                if (subtotal >= 100000) { fee = 0; } else { fee = 10000; }
-                eta = 30;
-            }
+            let fee = 0; let eta = 0;
+            if (m === 'pickup') { fee = 0; eta = 10; }
+            else if (m === 'express') { fee = Math.max(5000, Math.round(subtotal * 0.05)); eta = 20; }
+            else { fee = subtotal >= 100000 ? 0 : 10000; eta = 30; }
             return { fee, eta, method: m };
         }
 
-        function updateDeliveryUI() {
-            const subtotal = total || 0;
-            const existing = document.getElementById('deliveryOptions');
-            if (!existing) {
-                const wrapper = document.createElement('div');
-                wrapper.id = 'deliveryOptions';
-                wrapper.className = 'order-item';
-                wrapper.style.marginTop = '8px';
-                wrapper.innerHTML = `
-                    <div>
-                        <label for="deliveryMethod"><strong>Yetkazib berish turi</strong></label>
-                        <select id="deliveryMethod" aria-label="Delivery method" style="margin-top:6px">
-                            <option value="standard">Standard — odatda 30-45 daqiqa</option>
-                            <option value="express">Express — tezroq (qo'shimcha to'lov)</option>
-                            <option value="pickup">Olib ketish — do'kon ichida (0 so'm)</option>
-                        </select>
-                    </div>
-                    <div id="deliveryFeeRow" style="margin-top:8px"><small>Yuklangan...</small></div>
-                `;
-                orderItemsEl.appendChild(wrapper);
-                const sel = wrapper.querySelector('#deliveryMethod');
-                sel.addEventListener('change', () => {
-                    const info = calculateDelivery(subtotal, sel.value);
-                    // store current delivery info for order submission
-                    window.__mazza_current_delivery = info;
-                    const feeRow = document.getElementById('deliveryFeeRow');
-                    if (feeRow) feeRow.innerHTML = `<div><strong>Yetkazib berish:</strong></div><div><strong>${formatPrice(info.fee)}</strong> — ${info.eta} min</div>`;
-                    // update grand total row
-                    let g = document.getElementById('grandTotalRow');
-                    if (!g) {
-                        g = document.createElement('div'); g.id = 'grandTotalRow'; g.className = 'order-item';
-                        orderItemsEl.appendChild(g);
-                    }
-                    g.innerHTML = `<div><strong>Jami (yetkazib berish bilan)</strong></div><div><strong>${formatPrice(subtotal + info.fee)}</strong></div>`;
-                });
+        // Delivery options UI (left)
+        const existing = document.getElementById('deliveryOptions');
+        if (!existing) {
+            const wrapper = document.createElement('div');
+            wrapper.id = 'deliveryOptions';
+            wrapper.style.marginTop = '12px';
+            wrapper.innerHTML = `
+                <div class="delivery-label">Yetkazib berish turi</div>
+                <select id="deliveryMethod" aria-label="Delivery method">
+                    <option value="standard">Standard — odatda 30-45 daqiqa</option>
+                    <option value="express">Express — tezroq (qo'shimcha to'lov)</option>
+                    <option value="pickup">Olib ketish — do'kon ichida (0 so'm)</option>
+                </select>
+            `;
+            left.appendChild(wrapper);
 
-                // trigger initial calculation
-                sel.dispatchEvent(new Event('change'));
-            } else {
-                // update values if already present
-                const sel = document.getElementById('deliveryMethod');
-                const info = calculateDelivery(total, sel ? sel.value : 'standard');
+            const sel = wrapper.querySelector('#deliveryMethod');
+            sel.addEventListener('change', () => {
+                const info = calculateDelivery(total, sel.value);
                 window.__mazza_current_delivery = info;
-                const feeRow = document.getElementById('deliveryFeeRow');
-                if (feeRow) feeRow.innerHTML = `<div><strong>Yetkazib berish:</strong></div><div><strong>${formatPrice(info.fee)}</strong> — ${info.eta} min</div>`;
-                let g = document.getElementById('grandTotalRow');
-                if (!g) { g = document.createElement('div'); g.id = 'grandTotalRow'; g.className = 'order-item'; orderItemsEl.appendChild(g); }
-                g.innerHTML = `<div><strong>Jami (yetkazib berish bilan)</strong></div><div><strong>${formatPrice(total + info.fee)}</strong></div>`;
-            }
+                // update right summary
+                const deliverySummary = document.getElementById('deliverySummary');
+                const grand = document.getElementById('grandTotalRow');
+                if (deliverySummary) deliverySummary.innerHTML = `<strong>${formatPrice(info.fee)}</strong> — ${info.eta} min`;
+                if (grand) grand.innerHTML = `<strong>${formatPrice(total + info.fee)}</strong>`;
+            });
+
+            // initial trigger
+            sel.dispatchEvent(new Event('change'));
         }
 
-        // expose calculation to outer scope via a property so submit handler can use it
-        updateDeliveryUI();
+        orderItemsEl.appendChild(grid);
     }
 
     function closeOrderFn() { orderModal.setAttribute('aria-hidden', 'true'); }
@@ -452,7 +437,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attempt to post order to the server endpoint which forwards to Telegram.
     function sendOrderToBackend(order) {
         try {
-            fetch('/api/send-order', {
+            // Agar server localhost:3000 da ishlayotgan bo'lsa
+            const API_URL = 'http://localhost:3000/api/send-order';
+            
+            fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ order })
@@ -567,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (reviewForm) {
         reviewForm.addEventListener('submit', e => {
-            e.preventDefault(); 
+            e.preventDefault();
             // Use registered user's name for reviews. Require sign-in if not present.
             const cur = getCurrentUser();
             if (!cur) {
