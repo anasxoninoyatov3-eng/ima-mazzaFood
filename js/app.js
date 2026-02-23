@@ -404,24 +404,39 @@ document.addEventListener('DOMContentLoaded', () => {
     orderModal.addEventListener('click', e => { if (e.target === orderModal) closeOrderFn(); });
 
     // Submit order form (demo: store order in localStorage and show confirmation)
-    orderForm.addEventListener('submit', e => {
+    orderForm.addEventListener('submit', async e => {
         e.preventDefault();
+        const submitBtn = orderForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        
         const name = document.getElementById('customerName').value.trim();
         const phone = document.getElementById('customerPhone').value.trim();
         const address = document.getElementById('customerAddress').value.trim();
         if (!name || !phone || !address) { alert('Iltimos, ism, telefon va manzilni to\'ldiring.'); return }
+        
         const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
         const delivery = window.__mazza_current_delivery || { fee: 0, eta: 0, method: 'standard' };
         const totalWithDelivery = subtotal + (Number(delivery.fee) || 0);
         const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, ts: Date.now() };
+        
         const orders = JSON.parse(localStorage.getItem('mazza_orders') || '[]');
         orders.push(order);
         localStorage.setItem('mazza_orders', JSON.stringify(orders));
 
+        // Disable button and show loading state
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Yuborilmoqda...';
+        }
+
         // Try to notify backend (if available) which will forward to Telegram.
         // This call is best-effort and will fail silently if no backend is running.
         if (window.fetch) {
-            sendOrderToBackend(order);
+            try {
+                await sendOrderToBackend(order);
+            } catch (err) {
+                console.error('Failed to send order to Telegram:', err);
+            }
         }
 
         // Demo confirmation and clear cart — include delivery ETA and total
@@ -431,32 +446,72 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             alert('Buyurtma qabul qilindi! Tez orada siz bilan bog\'lanamiz.');
         }
+        
         cart = {}; updateCartUI(); closeOrderFn(); closeCartFn();
+        
+        // Restore button state
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+        }
     })
 
     // Attempt to post order to the server endpoint which forwards to Telegram.
     function sendOrderToBackend(order) {
+        // Direct Telegram integration (client-side) for Netlify/static hosting support
+        const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+        const CHAT_IDS = ["8283401187"]; // Add more IDs here if needed
+
+        // Build message text (HTML)
+        let text = `<b>📦 Yangi buyurtma!</b>\n\n`;
+        text += `🆔 <b>ID:</b> ${order.id || 'n/a'}\n`;
+        text += `👤 <b>Mijoz:</b> ${order.name}\n`;
+        text += `📞 <b>Telefon:</b> ${order.phone}\n`;
+        text += `📍 <b>Manzil:</b> ${order.address || '-'}\n\n`;
+        text += `<b>🛒 Buyurtma tarkibi:</b>\n`;
+
         try {
-            // Agar server localhost:3000 da ishlayotgan bo'lsa
-            const API_URL = 'http://localhost:3000/api/send-order';
-            
-            fetch(API_URL, {
+            const items = order.items || {};
+            Object.keys(items).forEach(k => {
+                const it = items[k];
+                text += `▫️ ${it.name} × ${it.qty} = ${formatPrice(it.price * it.qty)}\n`;
+            });
+        } catch (e) {
+            text += '(mahsulotlarni o\'qib bo\'lmadi)\n';
+        }
+
+        const delivery = order.delivery || {};
+        const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'Standard');
+        text += `\n🚚 <b>Yetkazib berish:</b> ${deliveryMethod}`;
+        if (delivery.fee) text += ` (${formatPrice(delivery.fee)})`;
+
+        text += `\n\n💰 <b>Jami:</b> ${formatPrice(order.total || 0)}`;
+        text += `\n🕒 <b>Vaqt:</b> ${new Date(order.ts || Date.now()).toLocaleString()}`;
+
+        // Send to all CHAT_IDS
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+        return Promise.all(CHAT_IDS.map(chatId => {
+            return fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order })
-            }).then(async res => {
-                if (res.ok) {
-                    console.log('Order forwarded to backend.');
-                } else {
-                    const txt = await res.text().catch(() => null);
-                    console.warn('Backend responded with status', res.status, txt);
-                }
-            }).catch(err => {
-                console.warn('Could not reach backend to forward order (this is optional):', err.message || err);
-            });
-        } catch (err) {
-            console.warn('Failed to send order to backend:', err);
-        }
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: text,
+                    parse_mode: 'HTML'
+                })
+            }).then(res => res.json())
+                .then(data => {
+                    if (!data.ok) console.error('Telegram error:', data);
+                    return data;
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    throw err; 
+                });
+        })).then(() => {
+            console.log('Order sent to Telegram');
+        });
     }
 
     detectCurrency();

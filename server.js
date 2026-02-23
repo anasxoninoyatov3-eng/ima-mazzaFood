@@ -25,7 +25,7 @@ app.post('/api/send-order', async (req, res) => {
     const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
     // Agar bir nechta odamga yubormoqchi bo'lsangiz, ID larni vergul bilan ajratib yozing
     // Masalan: ["8283401187", "9988776655"]
-    const CHAT_IDS = ["8283401187"]; 
+    const CHAT_IDS = ["8283401187"];
 
     if (!BOT_TOKEN || CHAT_IDS.length === 0) return res.status(500).json({ ok: false, error: 'Telegram credentials not configured' });
 
@@ -56,7 +56,7 @@ app.post('/api/send-order', async (req, res) => {
     text += `\n🕒 <b>Vaqt:</b> ${new Date(order.ts || Date.now()).toLocaleString()}`;
 
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    
+
     // Send to all CHAT_IDS
     const sendPromises = CHAT_IDS.map(chatId => {
       return axios.post(url, {
