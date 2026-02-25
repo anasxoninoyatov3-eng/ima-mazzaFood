@@ -365,31 +365,33 @@ body {
 }
 
 .card-body {
-    padding: 20px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     flex: 1;
+    gap: 16px;
 }
 
 .card-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0 0 8px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0;
     color: var(--dark);
+    line-height: 1.2;
 }
 
 .price {
     color: var(--accent);
     font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
+    font-size: 1.2rem;
+    margin: 0;
 }
 
 .desc {
     color: var(--muted);
-    font-size: 0.95rem;
-    margin-bottom: 16px;
-    line-height: 1.5;
+    font-size: 1rem;
+    margin: 0;
+    line-height: 1.6;
     flex: 1;
 }
 

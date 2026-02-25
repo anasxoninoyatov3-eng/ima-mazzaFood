@@ -415,6 +415,60 @@ document.addEventListener('DOMContentLoaded', () => {
             sel.dispatchEvent(new Event('change'));
         }
 
+        // Payment options UI (after delivery options)
+        const paymentWrapper = document.createElement('div');
+        paymentWrapper.id = 'paymentOptions';
+        paymentWrapper.style.marginTop = '16px';
+        paymentWrapper.innerHTML = `
+            <div class="delivery-label">To'lov turi</div>
+            <select id="paymentMethod" aria-label="Payment method" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
+                <option value="cash">Naqd (yetkazib berilganda)</option>
+                <option value="click">Click / Payme (karta orqali)</option>
+            </select>
+            <div id="clickDetails" style="display:none; margin-top:12px; padding:16px; background:#f0f8ff; border:1px solid #bce0fd; border-radius:12px;">
+                <div style="font-weight:700; color:#00a0e3; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <span>💳</span> CLICK / Payme
+                </div>
+                <div style="font-size:1.25rem; font-family:monospace; margin-bottom:6px; letter-spacing:1px; font-weight:700; color:#333;">5614 6822 1326 5467</div>
+                <div style="color:#555; font-size:0.95rem; margin-bottom:12px; font-weight:500;">Xatamkulov Xabibjon</div>
+                <button type="button" id="copyCardBtn" class="btn" style="padding:8px 14px; font-size:0.9rem; background:#fff; border:1px solid #ddd; color:#333; width:100%;">
+                    Karta raqamidan nusxa olish 📋
+                </button>
+            </div>
+        `;
+        left.appendChild(paymentWrapper);
+
+        const paymentSel = paymentWrapper.querySelector('#paymentMethod');
+        const clickDetails = paymentWrapper.querySelector('#clickDetails');
+        const copyBtn = paymentWrapper.querySelector('#copyCardBtn');
+
+        paymentSel.addEventListener('change', () => {
+            if (paymentSel.value === 'click') {
+                clickDetails.style.display = 'block';
+            } else {
+                clickDetails.style.display = 'none';
+            }
+        });
+
+        copyBtn.addEventListener('click', () => {
+             navigator.clipboard.writeText('5614682213265467')
+                .then(() => {
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = 'Nusxalandi! ✅';
+                    copyBtn.style.borderColor = '#2ecc71';
+                    copyBtn.style.color = '#2ecc71';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                        copyBtn.style.borderColor = '#ddd';
+                        copyBtn.style.color = '#333';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Copy failed', err);
+                    alert('Nusxalab bo\'lmadi. Iltimos qo\'lda nusxalang.');
+                });
+        });
+
         orderItemsEl.appendChild(grid);
     }
 
@@ -439,9 +493,16 @@ document.addEventListener('DOMContentLoaded', () => {
             address = 'Olib ketish'; // Set default text for pickup
         }
 
+        // Validate name: only letters and spaces
+        if (!/^[A-Za-z\u0400-\u04FF\s\'\`]+$/.test(name)) {
+            alert('Ismda faqat harflar bo\'lishi kerak.');
+            return;
+        }
+
         // Validate phone format: must be +998 followed by 9 digits
-        if (!/^\+998\d{9}$/.test(phone)) {
-            alert('Telefon raqami noto\'g\'ri formatda. Iltimos, +998 bilan boshlanadigan to\'g\'ri raqam kiriting (masalan: +998901234567).');
+        // AND strict provider code check (33, 50, 55, 70, 71, 77, 88, 90, 91, 93, 94, 95, 97, 98, 99)
+        if (!/^\+998(33|50|55|70|71|77|88|90|91|93|94|95|97|98|99)\d{7}$/.test(phone)) {
+            alert('Telefon raqami noto\'g\'ri formatda yoki O\'zbekiston kodi emas. Iltimos, +998 bilan boshlanadigan to\'g\'ri raqam kiriting (masalan: +998901234567).');
             return;
         }
 
@@ -453,7 +514,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
         // delivery is already defined above
         const totalWithDelivery = subtotal + (Number(delivery.fee) || 0);
-        const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, ts: Date.now() };
+        
+        // Get selected payment method
+        const paymentSel = document.getElementById('paymentMethod');
+        const paymentMethod = paymentSel ? paymentSel.value : 'cash';
+        
+        const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now() };
 
         const orders = JSON.parse(localStorage.getItem('mazza_orders') || '[]');
         orders.push(order);
@@ -496,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
         const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-        const CHAT_IDS = ["5377787513"]; // Add more IDs here if needed
+        const CHAT_IDS = ["8283401187"]; // Add more IDs here if needed
 
         // Build message text (HTML)
         let text = `<b>📦 Yangi buyurtma!</b>\n\n`;
@@ -520,6 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'Standard');
         text += `\n🚚 <b>Yetkazib berish:</b> ${deliveryMethod}`;
         if (delivery.fee) text += ` (${formatPrice(delivery.fee)})`;
+
+        // Payment info
+        const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
+        text += `\n💳 <b>To'lov turi:</b> ${payment}`;
 
         text += `\n\n💰 <b>Jami:</b> ${formatPrice(order.total || 0)}`;
         text += `\n🕒 <b>Vaqt:</b> ${new Date(order.ts || Date.now()).toLocaleString()}`;
