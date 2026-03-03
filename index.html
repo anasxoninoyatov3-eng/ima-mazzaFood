@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <link rel="stylesheet" href="css/social.css">
 </head>
 
 <body>
@@ -71,11 +72,17 @@
                     <button id="tabSignUp" class="btn">Sign Up</button>
                 </div>
 
-                <form id="signInForm" class="auth-form" style="margin-top:12px">
-                    <label for="siPhone">Phone or username</label>
+                <form id="signInForm" class="auth-form" style="display:none;margin-top:12px">
+                    <label for="siPhone">Phone</label>
                     <input id="siPhone" type="text" required>
                     <label for="siPassword">Password</label>
                     <input id="siPassword" type="password" required>
+                    
+                    <button type="button" class="btn google-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+                        Google orqali kirish
+                    </button>
+                    
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
                         <button type="button" id="siCancel" class="btn">Cancel</button>
                         <button type="submit" class="btn primary">Sign In</button>
@@ -91,6 +98,12 @@
                     <input id="suPassword" type="password" required>
                     <label for="suPassword2">Confirm password</label>
                     <input id="suPassword2" type="password" required>
+
+                    <button type="button" class="btn google-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+                        Google orqali ro'yxatdan o'tish
+                    </button>
+
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
                         <button type="button" id="suCancel" class="btn">Cancel</button>
                         <button type="submit" class="btn primary">Create Account</button>
@@ -455,6 +468,27 @@
             </section>
         </div>
     </main>
+
+    <!-- Social Media Section -->
+    <section class="social-media container">
+        <div class="social-card">
+            <h3>Biz bilan bog'laning</h3>
+            <div class="social-links">
+                <a href="https://t.me/Kokand_Mazza_FoodBot" target="_blank" class="social-link telegram-bot">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram Bot">
+                    <span>@Kokand_Mazza_FoodBot</span>
+                </a>
+                <a href="https://t.me/mazza_food_kokand" target="_blank" class="social-link telegram-group">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram Group">
+                    <span>Mazza Food Kokand</span>
+                </a>
+                <a href="https://www.instagram.com/mazza_food_kokand_/" target="_blank" class="social-link instagram">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram">
+                    <span>@mazza_food_kokand_</span>
+                </a>
+            </div>
+        </div>
+    </section>
 
     <footer class="site-footer">
         <div class="container footer-inner">
