@@ -70,6 +70,10 @@
                 va buyurtma berish uchun, iltimos ro'yxatdan o'ting.</p>
             <button id="goRegisterBtn" class="btn primary"
                 style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 8px;">Ro'yxatdan o'tish</button>
+            <p style="font-size: 0.85rem; color: #888; margin-top: 15px;">
+                Ro'yxatdan o'tish orqali siz <a href="terms.html" style="color: #ff6b00; text-decoration: underline;"
+                    target="_blank">Foydalanish shartlariga</a> rozi bo'lasiz.
+            </p>
         </div>
     </div>
 
@@ -106,29 +110,49 @@
                 </form>
 
                 <form id="signUpForm" class="auth-form" style="display:none;margin-top:12px">
-                    <label for="suName">Full name</label>
-                    <input id="suName" type="text" required>
-                    <label for="suPhone">Phone</label>
-                    <input id="suPhone" type="text" required>
-                    <label for="suPassword">Password</label>
-                    <div style="position: relative; width: 100%;">
-                        <input id="suPassword" type="password" required style="width: 100%; padding-right: 40px;">
-                        <span class="toggle-password" data-target="suPassword"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
-                    </div>
-                    <label for="suPassword2">Confirm password</label>
-                    <div style="position: relative; width: 100%;">
-                        <input id="suPassword2" type="password" required style="width: 100%; padding-right: 40px;">
-                        <span class="toggle-password" data-target="suPassword2"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
-                    </div>
+                    <div id="signUpStep1">
+                        <label for="suName">To'liq ism</label>
+                        <input id="suName" type="text" required>
+                        <label for="suPhone">Telefon</label>
+                        <input id="suPhone" type="text" required placeholder="+998901234567">
+                        <label for="suPassword">Parol</label>
+                        <div style="position: relative; width: 100%;">
+                            <input id="suPassword" type="password" required style="width: 100%; padding-right: 40px;">
+                            <span class="toggle-password" data-target="suPassword"
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
+                        </div>
+                        <label for="suPassword2">Parolni tasdiqlang</label>
+                        <div style="position: relative; width: 100%;">
+                            <input id="suPassword2" type="password" required style="width: 100%; padding-right: 40px;">
+                            <span class="toggle-password" data-target="suPassword2"
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
+                        </div>
 
-                    <div class="google-btn-container" style="margin-top: 12px; display: flex; justify-content: center;">
-                    </div>
+                        <div class="google-btn-container"
+                            style="margin-top: 12px; display: flex; justify-content: center;">
+                        </div>
 
-                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-                        <button type="button" id="suCancel" class="btn">Cancel</button>
-                        <button type="submit" class="btn primary">Create Account</button>
+                        <p style="font-size: 0.85rem; color: #666; margin-top: 15px; text-align: center;">
+                            Ro'yxatdan o'tish orqali siz <a href="terms.html"
+                                style="color: #ff6b00; text-decoration: underline;" target="_blank">Foydalanish
+                                shartlariga</a> rozi bo'lasiz.
+                        </p>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+                            <button type="button" id="suCancel" class="btn">Cancel</button>
+                            <button type="button" id="suNextBtn" class="btn primary">Tasdiqlash kodi</button>
+                        </div>
+                    </div>
+                    <div id="signUpStep2" style="display:none; text-align:center; padding: 20px 0;">
+                        <h4>SMS kodni kiriting</h4>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom:15px;" id="otpHint">Ko'rsatilgan
+                            telefonga kod yuborildi.</p>
+                        <input id="suOtp" type="text" placeholder="XXXX"
+                            style="font-size: 2rem; text-align: center; letter-spacing: 10px; padding: 10px; width: 100%; border: 2px solid #ddd; border-radius: 8px;"
+                            maxlength="4">
+                        <div style="display:flex;gap:8px;justify-content:center;margin-top:20px">
+                            <button type="button" id="suBackBtn" class="btn">Orqaga</button>
+                            <button type="submit" class="btn primary">Ro'yxatdan o'tish</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -449,8 +473,11 @@
     </section>
 
     <footer class="site-footer" style="text-align: center; padding: 20px 0; width: 100%;">
-        <div class="container footer-inner" style="display: flex; justify-content: center; align-items: center;">
+        <div class="container footer-inner"
+            style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
             <p>&copy; <span id="year"></span> Mazza Food. Barcha huquqlar himoyalangan.</p>
+            <a href="terms.html" style="color: #666; text-decoration: underline; font-size: 0.9rem;"
+                target="_blank">Foydalanish shartlari</a>
         </div>
     </footer>
 

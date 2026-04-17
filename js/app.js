@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('mazza_clean_users_v1')) {
+        localStorage.removeItem('mazza_users');
+        localStorage.removeItem('mazza_current_user');
+        localStorage.setItem('mazza_clean_users_v1', '1');
+    }
+
     const cartBtn = document.getElementById('cartBtn');
     const cartModal = document.getElementById('cartModal');
     const closeCart = document.getElementById('closeCart');
@@ -199,6 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (signUpForm) signUpForm.style.display = '';
         if (signInForm) signInForm.style.display = 'none';
         if (authMsg) { authMsg.style.display = 'none'; authMsg.textContent = ''; }
+
+        const step1 = document.getElementById('signUpStep1');
+        const step2 = document.getElementById('signUpStep2');
+        if (step1) step1.style.display = 'block';
+        if (step2) step2.style.display = 'none';
     }
 
     if (tabSignIn) tabSignIn.addEventListener('click', showSignIn);
@@ -313,19 +324,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Sign up / Sign in handlers
+    let currentOtp = null;
+    const suNextBtn = document.getElementById('suNextBtn');
+    const suBackBtn = document.getElementById('suBackBtn');
+    const signUpStep1 = document.getElementById('signUpStep1');
+    const signUpStep2 = document.getElementById('signUpStep2');
+
+    if (suNextBtn) {
+        suNextBtn.addEventListener('click', async () => {
+            const name = (document.getElementById('suName') || {}).value.trim();
+            const phone = (document.getElementById('suPhone') || {}).value.trim();
+            const pw = (document.getElementById('suPassword') || {}).value;
+            const pw2 = (document.getElementById('suPassword2') || {}).value;
+
+            if (!name || !phone || !pw) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Iltimos, barcha maydonlarni to\'ldiring.'; } return; }
+            if (pw !== pw2) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Parollar mos kelmadi.'; } return; }
+
+            const users = loadUsers();
+            if (users.find(u => u.phone === phone)) {
+                if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Telefon raqami allaqachon ro\'yxatdan o\'tgan'; }
+                return;
+            }
+
+            currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+            try {
+                const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+                const CHAT_ID = "8283401187";
+                const text = `🔐 Ro'yxatdan o'tish so'rovi!\n\n👤 Mijoz: ${name}\n📞 Telefon: ${phone}\n🔑 Kod: ${currentOtp}`;
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: text })
+                }).catch(() => { });
+            } catch (e) { }
+
+            if (authMsg) authMsg.style.display = 'none';
+            if (signUpStep1) signUpStep1.style.display = 'none';
+            if (signUpStep2) signUpStep2.style.display = 'block';
+        });
+    }
+
+    if (suBackBtn) {
+        suBackBtn.addEventListener('click', () => {
+            if (signUpStep2) signUpStep2.style.display = 'none';
+            if (signUpStep1) signUpStep1.style.display = 'block';
+        });
+    }
+
     async function handleSignUp(e) {
         e.preventDefault();
+        const enteredOtp = (document.getElementById('suOtp') || {}).value.trim();
+
+        if (enteredOtp !== currentOtp) {
+            alert('Tasdiqlash kodi noto\'g\'ri!');
+            return;
+        }
+
         const name = (document.getElementById('suName') || {}).value.trim();
         const phone = (document.getElementById('suPhone') || {}).value.trim();
         const pw = (document.getElementById('suPassword') || {}).value;
-        const pw2 = (document.getElementById('suPassword2') || {}).value;
-        if (!name || !phone || !pw) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Iltimos, barcha maydonlarni to\'ldiring.'; } return; }
-        if (pw !== pw2) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Parollar mos kelmadi.'; } return; }
+
         try {
             await registerUser(name, phone, pw);
             renderAuthState();
             closeAuthFn();
-            alert('Hisob yaratildi va tizimga kirildi.');
+            if (signUpStep2) signUpStep2.style.display = 'none';
+            if (signUpStep1) signUpStep1.style.display = 'block';
+            if (document.getElementById('suOtp')) document.getElementById('suOtp').value = '';
+            alert('Hisob yaratildi va muvaffaqiyatli tizimga kirildi.');
         } catch (err) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); } }
     }
 
@@ -683,6 +750,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        function getLoc() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) { resolve('Qurilma qo\'llab-quvvatlamaydi'); return; }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`),
+                    (err) => resolve('Joylashuv aniqlanmadi (ruxsat berilmagan)')
+                );
+            });
+        }
+
         const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
         // delivery is already defined above
         const totalWithDelivery = subtotal + (Number(delivery.fee) || 0);
@@ -691,17 +768,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const paymentSel = document.getElementById('paymentMethod');
         const paymentMethod = paymentSel ? paymentSel.value : 'cash';
 
-        const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now() };
+        // Disable button and show loading state for geolocation
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Joylashuv olinmoqda...';
+        }
+
+        const orderLocation = await getLoc();
+
+        if (submitBtn) {
+            submitBtn.textContent = 'Yuborilmoqda...';
+        }
+
+        const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now(), location: orderLocation };
 
         const orders = JSON.parse(localStorage.getItem('mazza_orders') || '[]');
         orders.push(order);
         localStorage.setItem('mazza_orders', JSON.stringify(orders));
-
-        // Disable button and show loading state
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Yuborilmoqda...';
-        }
 
         // Try to notify backend (if available) which will forward to Telegram.
         // This call is best-effort and will fail silently if no backend is running.
@@ -734,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
         const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-        const CHAT_IDS = ["8654658696"]; // Add more IDs here if needed
+        const CHAT_IDS = ["8283401187"]; // Add more IDs here if needed
 
         // Build message text
         let text = `📦 Yangi buyurtma!\n\n`;
@@ -762,6 +845,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Payment info
         const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
         text += `\n💳 To'lov turi: ${payment}`;
+
+        if (order.location) {
+            text += `\n🌍 Joylashuv (GPS): ${order.location}`;
+        }
 
         text += `\n\n💰 Jami: ${formatPrice(order.total || 0)}`;
 
