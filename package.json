@@ -2,9 +2,9 @@
   "name": "ima-mazzafood",
   "version": "1.0.0",
   "description": "Mazza Food small demo server to forward orders to Telegram",
-  "main": "server.js",
+  "main": "js/server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node js/server.js"
   },
   "keywords": [],
   "author": "",

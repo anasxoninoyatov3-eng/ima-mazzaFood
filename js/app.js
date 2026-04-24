@@ -66,7 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = cart[id];
             const li = document.createElement('li');
             li.className = 'cart-item';
-            li.innerHTML = `<div><strong>${item.name}</strong><br><small>${item.qty} × ${formatPrice(item.price)}</small></div><div><button class="btn icon remove" data-id="${id}" aria-label="Remove ${item.name}">−</button></div>`;
+            li.innerHTML = `<div><strong>${item.name}</strong><br><small>${item.qty} × ${formatPrice(item.price)}</small></div>
+            <div style="display:flex; gap: 8px;">
+                <button class="btn icon remove" data-id="${id}" aria-label="Kamaytirish ${item.name}">−</button>
+                <button class="btn icon add-qty" data-id="${id}" aria-label="Ko'paytirish ${item.name}">+</button>
+            </div>`;
             cartList.appendChild(li);
             total += item.price * item.qty;
             items += item.qty;
@@ -114,7 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (cart[id]) {
                 cart[id].qty -= 1;
+                accountTotal = Math.max(0, accountTotal - 1);
                 if (cart[id].qty <= 0) delete cart[id];
+                localStorage.setItem('mazza_account_total', String(accountTotal));
+                updateCartUI();
+            }
+        }
+        if (e.target && e.target.classList.contains('add-qty')) {
+            const id = e.target.dataset.id;
+            if (cart[id]) {
+                cart[id].qty += 1;
+                accountTotal += 1;
+                localStorage.setItem('mazza_account_total', String(accountTotal));
                 updateCartUI();
             }
         }
@@ -349,13 +364,22 @@ document.addEventListener('DOMContentLoaded', () => {
             currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
             try {
-                const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-                const CHAT_ID = "8283401187";
-                const text = `🔐 Ro'yxatdan o'tish so'rovi!\n\n👤 Mijoz: ${name}\n📞 Telefon: ${phone}\n🔑 Kod: ${currentOtp}`;
-                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                // Admin info goes to the admin bot
+                const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+                const ADMIN_CHAT_ID = "8283401187";
+                const adminText = `🔐 Ro'yxatdan o'tish so'rovi!\n\n👤 Mijoz: ${name}\n📞 Telefon: ${phone}\n🔑 Kod: ${currentOtp}`;
+                fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: CHAT_ID, text: text })
+                    body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: adminText })
+                }).catch(() => { });
+
+                // Verification code is sent to the phone number directly
+                const userText = `Sizning tasdiqlash kodingiz: ${currentOtp}`;
+                fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: phone, text: userText })
                 }).catch(() => { });
             } catch (e) { }
 
@@ -816,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attempt to post order to the server endpoint which forwards to Telegram.
     function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
-        const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+        const BOT_TOKEN = "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
         const CHAT_IDS = ["8283401187"]; // Add more IDs here if needed
 
         // Build message text
@@ -1017,44 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Phone Number Input Formatting ---
     function setupPhoneInput(inputId) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-
-        // Set initial value on focus
-        input.addEventListener('focus', () => {
-            if (!input.value) input.value = '+998';
-        });
-
-        // Enforce format on input
-        input.addEventListener('input', () => {
-            let val = input.value;
-
-            // Remove all non-digits
-            const digits = val.replace(/\D/g, '');
-
-            // Reconstruct with +998 prefix
-            if (digits.startsWith('998')) {
-                val = '+' + digits;
-            } else {
-                val = '+998' + digits;
-            }
-
-            // Limit length to 13 (+998 + 9 digits)
-            if (val.length > 13) {
-                val = val.slice(0, 13);
-            }
-
-            if (input.value !== val) {
-                input.value = val;
-            }
-        });
-
-        // Prevent backspace from deleting the prefix (+998)
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && input.value.length <= 4) {
-                e.preventDefault();
-            }
-        });
+        // Disabling automatic +998 filling based on user request
     }
 
     setupPhoneInput('customerPhone');

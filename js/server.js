@@ -1,11 +1,15 @@
-// Load environment from .env if available (optional). Do NOT commit a real .env to source control.
+// Load environment from .env if available
 try { require('dotenv').config(); } catch (e) { }
+
+// Start Telegram Bot
+require('../bot.js');
+
 const express = require('express');
 const https = require('https');
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID || 8283401187;
 
 app.use(express.json());

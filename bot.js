@@ -1,7 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // Bot token provided by the user
-const token = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc';
+const token = '8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug';
 const bot = new TelegramBot(token, { polling: true });
 
 // Admin ID for incoming orders
@@ -90,7 +90,7 @@ bot.on('message', (msg) => {
 
     if (text === '/start') {
         const welcomeMessage = `🍔 *Mazza Foodga xush kelibsiz!* 🍟\n\nSizni ko'rib turganimizdan xursandmiz. Biz bilan eng mazali va tez tayyorlanadigan fast food taomlaridan bahramand bo'ling!\n\n👇 _Iltimos, Menyuni ochish uchun quyidagi tugmani bosing:_`;
-        
+
         // Use a photo with the start message for a beautiful effect
         bot.sendPhoto(chatId, 'https://cdn-icons-png.flaticon.com/512/7997/7997011.png', {
             caption: welcomeMessage,
@@ -106,13 +106,13 @@ bot.on('callback_query', (query) => {
     const session = getSession(chatId);
 
     // Provide a default answer query to stop loading spinner
-    try { bot.answerCallbackQuery(query.id); } catch(e){}
+    try { bot.answerCallbackQuery(query.id); } catch (e) { }
 
     if (data === 'show_categories') {
         // We delete the photo message and send a text message for categories to keep it clean, or edit caption
         try {
             bot.deleteMessage(chatId, query.message.message_id);
-        } catch(e) {}
+        } catch (e) { }
         bot.sendMessage(chatId, "😋 *Kategoriyani tanlang:*", {
             parse_mode: 'Markdown',
             ...getCategoriesMenu()
@@ -120,7 +120,7 @@ bot.on('callback_query', (query) => {
     }
 
     else if (data === 'back_start') {
-        try { bot.deleteMessage(chatId, query.message.message_id); } catch(e) {}
+        try { bot.deleteMessage(chatId, query.message.message_id); } catch (e) { }
         const welcomeMessage = `🍔 *Mazza Foodga xush kelibsiz!* 🍟\n\n👇 _Iltimos, Menyuni ochish uchun quyidagi tugmani bosing:_`;
         bot.sendPhoto(chatId, 'https://cdn-icons-png.flaticon.com/512/7997/7997011.png', {
             caption: welcomeMessage,
@@ -132,7 +132,7 @@ bot.on('callback_query', (query) => {
     else if (data.startsWith('cat_')) {
         const catId = data.replace('cat_', '');
         const items = products[catId];
-        
+
         let keyboard = [];
         items.forEach(p => {
             keyboard.push([{ text: `➕ ${p.name} - ${p.price} so'm`, callback_data: `add_${p.id}` }]);
@@ -151,9 +151,9 @@ bot.on('callback_query', (query) => {
     else if (data.startsWith('add_')) {
         const pId = data.replace('add_', '');
         const p = getProductById(pId);
-        if(!session.cart[pId]) session.cart[pId] = { ...p, count: 0 };
+        if (!session.cart[pId]) session.cart[pId] = { ...p, count: 0 };
         session.cart[pId].count += 1;
-        
+
         bot.answerCallbackQuery(query.id, { text: `✅ ${p.name} savatchaga qo'shildi!`, show_alert: true });
     }
 
@@ -161,35 +161,64 @@ bot.on('callback_query', (query) => {
         let text = '*Sizning savatchangiz:*\n\n';
         let total = 0;
         let keys = Object.keys(session.cart);
-        
-        if(keys.length === 0) {
-           bot.answerCallbackQuery(query.id, { text: "Savatcha bo'sh!", show_alert: true });
-           bot.editMessageText("Sizning savatchangiz bo'sh. Mahsulot tanlang:", {
-               chat_id: chatId,
-               message_id: query.message.message_id,
-               ...getCategoriesMenu()
-           });
-           return;
+
+        if (keys.length === 0) {
+            bot.answerCallbackQuery(query.id, { text: "Savatcha bo'sh!", show_alert: true });
+            bot.editMessageText("Sizning savatchangiz bo'sh. Mahsulot tanlang:", {
+                chat_id: chatId,
+                message_id: query.message.message_id,
+                ...getCategoriesMenu()
+            });
+            return;
         }
 
+        let inline_keyboard = [];
         keys.forEach(k => {
             const item = session.cart[k];
             text += `- ${item.name} x ${item.count} = ${item.price * item.count} so'm\n`;
             total += item.price * item.count;
+            inline_keyboard.push([
+                { text: '➖', callback_data: `cart_dec_${k}` },
+                { text: `${item.name} (${item.count})`, callback_data: 'noop' },
+                { text: '➕', callback_data: `cart_inc_${k}` }
+            ]);
         });
         text += `\n*Jami: ${total} so'm*`;
+
+        inline_keyboard.push([{ text: '🗑 Tozalash', callback_data: 'cart_clear' }, { text: '🚀 Buyurtma berish', callback_data: 'checkout_type' }]);
+        inline_keyboard.push([{ text: '🔙 Orqaga', callback_data: 'show_categories' }]);
 
         bot.editMessageText(text, {
             chat_id: chatId,
             message_id: query.message.message_id,
             parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '🗑 Tozalash', callback_data: 'cart_clear' }, { text: '🚀 Buyurtma berish', callback_data: 'checkout_type' }],
-                    [{ text: '🔙 Orqaga', callback_data: 'show_categories' }]
-                ]
-            }
+            reply_markup: { inline_keyboard }
         });
+    }
+
+    else if (data === 'noop') {
+        try { bot.answerCallbackQuery(query.id); } catch(e){}
+    }
+
+    else if (data.startsWith('cart_inc_')) {
+        const pId = data.replace('cart_inc_', '');
+        if (session.cart[pId]) {
+            session.cart[pId].count += 1;
+        }
+        query.data = 'cart_view';
+        bot.emit('callback_query', query);
+    }
+
+    else if (data.startsWith('cart_dec_')) {
+        const pId = data.replace('cart_dec_', '');
+        if (session.cart[pId]) {
+            session.cart[pId].count -= 1;
+            if (session.cart[pId].count <= 0) {
+                delete session.cart[pId];
+            }
+        }
+        query.data = 'cart_view';
+        bot.emit('callback_query', query);
     }
 
     else if (data === 'cart_clear') {
@@ -232,7 +261,7 @@ bot.on('callback_query', (query) => {
 
     else if (data.startsWith('pay_')) {
         session.payment = data.replace('pay_', ''); // cash or click
-        
+
         let orderText = `🚨 *Yangi Buyurtma!*\n\n`;
         let total = 0;
         Object.keys(session.cart).forEach(k => {
@@ -240,7 +269,7 @@ bot.on('callback_query', (query) => {
             orderText += `- ${item.name} x ${item.count} = ${item.price * item.count} so'm\n`;
             total += item.price * item.count;
         });
-        
+
         const typeStr = session.type === 'delivery' ? 'Yetkazib berish (Доставка) 🚚' : 'Olib ketish (Собой) 🚶‍♂️';
         const payStr = session.payment === 'cash' ? 'Naqd pul 💵' : 'Click 💳';
 
