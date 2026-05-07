@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('mazza_clean_users_v1')) {
+    if (!localStorage.getItem('mazza_clean_users_v2')) {
         localStorage.removeItem('mazza_users');
         localStorage.removeItem('mazza_current_user');
-        localStorage.setItem('mazza_clean_users_v1', '1');
+        localStorage.setItem('mazza_clean_users_v2', '1');
     }
 
     const cartBtn = document.getElementById('cartBtn');
@@ -232,16 +232,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Password visibility toggle (Event Delegation)
     document.addEventListener('click', (e) => {
-        if (e.target.classList && e.target.classList.contains('toggle-password')) {
-            const targetId = e.target.getAttribute('data-target');
+        const toggleBtn = e.target.closest('.toggle-password');
+        if (toggleBtn) {
+            const targetId = toggleBtn.getAttribute('data-target');
             const input = document.getElementById(targetId);
             if (input) {
                 if (input.type === 'password') {
                     input.type = 'text';
-                    e.target.textContent = '❌';
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
                 } else {
                     input.type = 'password';
-                    e.target.textContent = '👁️';
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
                 }
             }
         }
@@ -315,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             accountBtn.innerHTML = `👤 <strong style="margin-left:6px">${escapeHtml(user.name.split(' ')[0] || user.phone)}</strong>`;
             accountBtn.title = `Tizimga kirdingiz: ${user.name}`;
         } else {
-            accountBtn.innerHTML = `👤 <span id="accountCount" class="cart-count" aria-hidden="true">${accountTotal}</span>`;
+            accountBtn.innerHTML = ` <i style="color: purple;" class="fa-solid fa-user"></i> <span id="accountCount" class="cart-count" aria-hidden="true">${accountTotal}</span>`;
             accountBtn.title = 'Hisob (kirish)';
         }
     }
@@ -340,6 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sign up / Sign in handlers
     let currentOtp = null;
+    let currentOtpMessageId = null;
+    let currentOtpChatId = null;
     const suNextBtn = document.getElementById('suNextBtn');
     const suBackBtn = document.getElementById('suBackBtn');
     const signUpStep1 = document.getElementById('signUpStep1');
@@ -352,35 +355,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const pw = (document.getElementById('suPassword') || {}).value;
             const pw2 = (document.getElementById('suPassword2') || {}).value;
 
-            if (!name || !phone || !pw) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Iltimos, barcha maydonlarni to\'ldiring.'; } return; }
-            if (pw !== pw2) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Parollar mos kelmadi.'; } return; }
+            if (!name || !phone || !pw) {
+                if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Iltimos, barcha maydonlarni to\'ldiring.'; }
+                else { alert('Iltimos, barcha maydonlarni to\'ldiring.'); }
+                return;
+            }
+            if (pw !== pw2) {
+                if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Parollar mos kelmadi.'; }
+                else { alert('Parollar mos kelmadi.'); }
+                return;
+            }
 
             const users = loadUsers();
             if (users.find(u => u.phone === phone)) {
                 if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Telefon raqami allaqachon ro\'yxatdan o\'tgan'; }
+                else { alert('Telefon raqami allaqachon ro\'yxatdan o\'tgan'); }
                 return;
             }
 
             currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            currentOtpMessageId = null;
+            currentOtpChatId = null;
 
             try {
-                // Admin info goes to the admin bot
                 const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-                const ADMIN_CHAT_ID = "8283401187";
-                const adminText = `🔐 Ro'yxatdan o'tish so'rovi!\n\n👤 Mijoz: ${name}\n📞 Telefon: ${phone}\n🔑 Kod: ${currentOtp}`;
+                const ADMIN_CHAT_ID = "5377787513";
+
+                // Admin info
+                const adminText = `🔐 Ro'yxatdan o'tish so'rovi!\n\nMijoz: ${name}\nTelefon: ${phone}\nKod: ${currentOtp}`;
                 fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: adminText })
+                }).then(res => res.json()).then(data => {
+                    if (data.ok) {
+                        currentOtpMessageId = data.result.message_id;
+                        currentOtpChatId = ADMIN_CHAT_ID;
+                    }
                 }).catch(() => { });
 
-                // Verification code is sent to the phone number directly
-                const userText = `Sizning tasdiqlash kodingiz: ${currentOtp}`;
-                fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: phone, text: userText })
-                }).catch(() => { });
+                // Hozircha tekin va aniq ishlaydigan yagona yo'l: Ekranda kodni ko'rsatib turish
+                alert(`Tasdiqlash kodi: ${currentOtp}`);
             } catch (e) { }
 
             if (authMsg) authMsg.style.display = 'none';
@@ -393,6 +408,29 @@ document.addEventListener('DOMContentLoaded', () => {
         suBackBtn.addEventListener('click', () => {
             if (signUpStep2) signUpStep2.style.display = 'none';
             if (signUpStep1) signUpStep1.style.display = 'block';
+        });
+    }
+
+    const suOtpInput = document.getElementById('suOtp');
+    if (suOtpInput) {
+        suOtpInput.addEventListener('input', (e) => {
+            const enteredOtp = e.target.value.trim();
+            if (enteredOtp === currentOtp && currentOtp !== null) {
+                // Instantly delete the message
+                if (currentOtpMessageId && currentOtpChatId) {
+                    const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+                    fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/deleteMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: currentOtpChatId, message_id: currentOtpMessageId })
+                    }).catch(() => { });
+                    currentOtpMessageId = null;
+                    currentOtpChatId = null;
+                }
+
+                // Optional: Auto-submit form when code is fully typed correctly
+                // if (signUpForm) signUpForm.dispatchEvent(new Event('submit'));
+            }
         });
     }
 
@@ -411,26 +449,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await registerUser(name, phone, pw);
+
+            // Try to delete the bot OTP message
+            if (currentOtpMessageId && currentOtpChatId) {
+                const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+                fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/deleteMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: currentOtpChatId, message_id: currentOtpMessageId })
+                }).catch(() => { });
+            }
+
             renderAuthState();
             closeAuthFn();
             if (signUpStep2) signUpStep2.style.display = 'none';
             if (signUpStep1) signUpStep1.style.display = 'block';
             if (document.getElementById('suOtp')) document.getElementById('suOtp').value = '';
             alert('Hisob yaratildi va muvaffaqiyatli tizimga kirildi.');
-        } catch (err) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); } }
+        } catch (err) {
+            if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); }
+            else { alert(err.message || String(err)); }
+        }
     }
 
     async function handleSignIn(e) {
         e.preventDefault();
         const phone = (document.getElementById('siPhone') || {}).value.trim();
         const pw = (document.getElementById('siPassword') || {}).value;
-        if (!phone || !pw) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Iltimos, telefon/foydalanuvchi nomi va parolni kiriting.'; } return; }
+        if (!phone || !pw) {
+            if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Iltimos, telefon/foydalanuvchi nomi va parolni kiriting.'; }
+            else { alert('Iltimos, telefon/foydalanuvchi nomi va parolni kiriting.'); }
+            return;
+        }
         try {
             await loginUser(phone, pw);
             renderAuthState();
             closeAuthFn();
             alert('Muvaffaqiyatli tizimga kirildi.');
-        } catch (err) { if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); } }
+        } catch (err) {
+            if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); }
+            else { alert(err.message || String(err)); }
+        }
     }
 
     if (signUpForm) signUpForm.addEventListener('submit', handleSignUp);
@@ -481,73 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (getCurrentUser() && e.target === authModal) closeAuthFn();
         });
     }
-
-    // Google Identity Services (OAuth) Implementation
-    const GOOGLE_CLIENT_ID = "146730977047-khiaa5abr6bohvt77i7r74njurrsvbo8.apps.googleusercontent.com";
-
-    function handleGoogleCredentialResponse(response) {
-        try {
-            // Decode the JWT token returning from Google
-            const base64Url = response.credential.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const payload = JSON.parse(jsonPayload);
-
-            // Mahalliy auth formatiga moslash
-            const googleUser = {
-                id: payload.sub,
-                name: payload.name || 'Mijoz (Google)',
-                phone: payload.email || 'google-user',
-                hash: 'google-oauth'
-            };
-
-            // Foydalanuvchini saqlash
-            const users = loadUsers();
-            if (!users.find(u => u.id === googleUser.id)) {
-                users.push(googleUser);
-                saveUsers(users);
-            }
-            setCurrentUserId(googleUser.id);
-
-            renderAuthState();
-            closeAuthFn(true); // Asosiy oynani majburiy yopish
-            alert('Google orqali muvaffaqiyatli kirildi! ✅');
-        } catch (error) {
-            console.error('Google auth xatoligi:', error);
-            alert('Tizimga kirishda xatolik yuz berdi: ' + error.message);
-        }
-    }
-
-    // Initialize Google OAuth buttons when the library is loaded
-    function initGoogleAuth() {
-        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            // Agar Client ID kiritilmagan bo'lsa ogohlantirish (kod ishlashi uchun)
-            if (GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com" || !GOOGLE_CLIENT_ID) {
-                console.warn("Google Client ID kiritilmagan. js/app.js faylida GOOGLE_CLIENT_ID ni o'zgartiring.");
-            }
-
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleCredentialResponse
-            });
-            const containers = document.querySelectorAll('.google-btn-container');
-            containers.forEach(container => {
-                google.accounts.id.renderButton(
-                    container,
-                    { theme: "outline", size: "large", type: "standard", text: "continue_with", width: "100%" }
-                );
-            });
-        } else {
-            // Retrying init if the Google script hasn't fully loaded yet
-            setTimeout(initGoogleAuth, 500);
-        }
-    }
-
-    // Call init
-    setTimeout(initGoogleAuth, 500);
 
     // Mobile hamburger menu toggle
     (function mobileNavToggle() {
@@ -841,7 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
         const BOT_TOKEN = "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
-        const CHAT_IDS = ["8283401187"]; // Add more IDs here if needed
+        const CHAT_IDS = ["5377787513"]; // Add more IDs here if needed
 
         // Build message text
         let text = `📦 Yangi buyurtma!\n\n`;

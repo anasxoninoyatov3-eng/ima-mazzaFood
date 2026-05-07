@@ -17,7 +17,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="css/social.css">
-    <link rel="stylesheet" href="css/google.css">
 </head>
 
 <body>
@@ -43,7 +42,8 @@
             <div class="header-actions">
                 <button id="accountBtn" class="cart-btn account-pill" aria-label="Account items"
                     title="General account">
-                    👤 <span id="accountCount" class="cart-count" aria-hidden="true">0</span>
+                    <i style="color: blue;" class="fa-regular fa-user"></i> <span id="accountCount" class="cart-count"
+                        aria-hidden="true">0</span>
                 </button>
 
                 <button id="cartBtn" class="cart-btn" aria-haspopup="dialog" aria-controls="cartModal"
@@ -82,7 +82,7 @@
         <div class="modal-panel">
             <header class="modal-header">
                 <h3 id="authTitle">Account</h3>
-                <button id="closeAuth" class="btn icon" aria-label="Close auth">✕</button>
+                <button id="closeAuth" class="btn icon" aria-label="Close auth"><i class="fa-solid fa-x"></i></button>
             </header>
             <div class="modal-body">
                 <div class="auth-tabs">
@@ -97,12 +97,9 @@
                     <div style="position: relative; width: 100%;">
                         <input id="siPassword" type="password" required style="width: 100%; padding-right: 40px;">
                         <span class="toggle-password" data-target="siPassword"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;"><i
+                                class="fa-solid fa-eye"></i></span>
                     </div>
-
-                    <div class="google-btn-container" style="margin-top: 12px; display: flex; justify-content: center;">
-                    </div>
-
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
                         <button type="button" id="siCancel" class="btn">Cancel</button>
                         <button type="submit" class="btn primary">Sign In</button>
@@ -119,19 +116,16 @@
                         <div style="position: relative; width: 100%;">
                             <input id="suPassword" type="password" required style="width: 100%; padding-right: 40px;">
                             <span class="toggle-password" data-target="suPassword"
-                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;"><i
+                                    class="fa-solid fa-eye"></i></span>
                         </div>
                         <label for="suPassword2">Parolni tasdiqlang</label>
                         <div style="position: relative; width: 100%;">
                             <input id="suPassword2" type="password" required style="width: 100%; padding-right: 40px;">
                             <span class="toggle-password" data-target="suPassword2"
-                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;">👁️</span>
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.1rem; user-select: none; z-index: 10;"><i
+                                    class="fa-solid fa-eye"></i></span>
                         </div>
-
-                        <div class="google-btn-container"
-                            style="margin-top: 12px; display: flex; justify-content: center;">
-                        </div>
-
                         <p style="font-size: 0.85rem; color: #666; margin-top: 15px; text-align: center;">
                             Ro'yxatdan o'tish orqali siz <a href="terms.html"
                                 style="color: #ff6b00; text-decoration: underline;" target="_blank">Foydalanish
@@ -187,7 +181,7 @@
             <div class="features-grid">
                 <div class="feature-card" tabindex="0" aria-describedby="feat-delivery">
                     <div class="feature-inner">
-                        <div class="feature-icon">🚚</div>
+                        <div class="feature-icon"><i style="color: #241f53;" class="fa-solid fa-truck"></i></div>
                         <h4>Yetkazib berish</h4>
                         <p id="feat-delivery">30 daqiqadan kam vaqt ichida yetkazib berish.</p>
                     </div>
@@ -195,7 +189,9 @@
 
                 <div class="feature-card" tabindex="0" aria-describedby="feat-menu">
                     <div class="feature-inner">
-                        <div class="feature-icon">📋</div>
+                        <div class="feature-icon"><i style="  background: linear-gradient(to bottom, #ff7e5f,green, #ff7e5f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;" class="fa-solid fa-burger"></i></div>
                         <h4>Menu</h4>
                         <p id="feat-menu">Mazza Foodning menyusi.</p>
                     </div>
@@ -203,7 +199,8 @@
 
                 <div class="feature-card" tabindex="0" aria-describedby="feat-about">
                     <div class="feature-inner">
-                        <div class="feature-icon">ℹ️</div>
+                        <div class="feature-icon"><i style="color: rgb(0, 132, 240);" class="fa-solid fa-info"></i>
+                        </div>
                         <h4>Haqida</h4>
                         <p id="feat-about">Bizning istoriyamiz va maxsulatlarimiz haqida.</p>
                     </div>
@@ -456,16 +453,15 @@
             <h3>Biz bilan bog'laning</h3>
             <div class="social-links">
                 <a href="https://t.me/Kokand_Mazza_FoodBot" target="_blank" class="social-link telegram-bot">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram Bot">
-                    <span>@Kokand_Mazza_FoodBot</span>
+                    <i class="fa-solid fa-robot"></i>
+                    <span>Kokand_Mazza_FoodBot</span>
                 </a>
                 <a href="https://t.me/mazza_food_kokand" target="_blank" class="social-link telegram-group">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg"
-                        alt="Telegram Group">
+                    <i class="fa-brands fa-telegram"></i>
                     <span>Mazza Food Kokand</span>
                 </a>
                 <a href="https://www.instagram.com/mazza_food_kokand_/" target="_blank" class="social-link instagram">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram">
+                    <i class="fa-brands fa-instagram"></i>
                     <span>@mazza_food_kokand_</span>
                 </a>
             </div>
@@ -554,10 +550,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Google Identity Services (OAuth) -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <script src="js/app.js"></script>
 </body>
 

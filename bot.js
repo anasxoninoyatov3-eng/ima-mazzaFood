@@ -5,7 +5,7 @@ const token = '8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug';
 const bot = new TelegramBot(token, { polling: true });
 
 // Admin ID for incoming orders
-const ADMIN_ID = '8283401187';
+const ADMIN_ID = '5377787513';
 
 // Product Database
 const products = {
@@ -197,7 +197,7 @@ bot.on('callback_query', (query) => {
     }
 
     else if (data === 'noop') {
-        try { bot.answerCallbackQuery(query.id); } catch(e){}
+        try { bot.answerCallbackQuery(query.id); } catch (e) { }
     }
 
     else if (data.startsWith('cart_inc_')) {
