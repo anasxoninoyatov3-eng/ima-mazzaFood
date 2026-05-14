@@ -498,8 +498,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // initialize header auth state
     renderAuthState();
 
-    // Check if user is logged in, if not, force auth modal via welcome modal
+    // Check if user is logged in
     const currentUser = getCurrentUser();
+    /* 
+    // Automatic registration prompt removed as per user request
     if (!currentUser) {
         const welcomeModal = document.getElementById('welcomeModal');
         const goRegisterBtn = document.getElementById('goRegisterBtn');
@@ -529,6 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    */
 
     cartModal.addEventListener('click', e => {
         if (e.target === cartModal) closeCartFn();
@@ -945,6 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderReviews();
 
+    /*
     // ---------- Card tilt/translate based on cursor X position ----------
     (function setupCardTilt() {
         const cards = document.querySelectorAll('.menu-grid .card');
@@ -981,6 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     })();
+    */
 
     // Hero text entrance: add .animate class on load so heading, paragraph and CTA fade/slide in
     (function heroEntrance() {
