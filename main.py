@@ -111,6 +111,21 @@ async def command_clear_handler(message: types.Message):
         session['cart'] = {}
         await message.answer("🗑 Savatchangiz muvaffaqiyatli tozalandi!")
 
+@dp.message(Command("about"))
+async def command_about_handler(message: types.Message):
+    about_text = (
+        "🍕 *PIZZA & KFC & FAST FOOD*\n\n"
+        "🍕 *PIZZA буюртма берсангиз етказиб бериш хизмати бепул!!!*\n\n"
+        "📍 *Манзил:* Пўстиндўз кўчаси (Спортивные) нон маркази билан ён маён\n\n"
+        "💳 *CLICK*\n"
+        "`5614 6822 1326 5467` \n"
+        "*Xatamkulov Xabibjon*\n\n"
+        "🚗 *Доставка хизмати*\n"
+        "+99897-201-10-10\n"
+        "+99888-201-10-10"
+    )
+    await message.answer(about_text, parse_mode='Markdown')
+
 @dp.callback_query(F.data == 'show_categories')
 async def show_categories(query: CallbackQuery):
     await query.message.answer("😋 *Kategoriyani tanlang:*", parse_mode='Markdown', reply_markup=get_categories_menu())
