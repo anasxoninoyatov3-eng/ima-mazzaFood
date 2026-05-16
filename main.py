@@ -4,7 +4,7 @@ import sys
 from typing import Dict, Any
 
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -97,6 +97,19 @@ async def command_start_handler(message: types.Message):
         parse_mode='Markdown',
         reply_markup=get_start_menu()
     )
+
+@dp.message(Command("menu"))
+async def command_menu_handler(message: types.Message):
+    await message.answer("😋 *Kategoriyani tanlang:*", parse_mode='Markdown', reply_markup=get_categories_menu())
+
+@dp.message(Command("clear"))
+async def command_clear_handler(message: types.Message):
+    session = get_session(message.chat.id)
+    if not session['cart']:
+        await message.answer("🛒 Savatchangiz allaqachon bo'sh.")
+    else:
+        session['cart'] = {}
+        await message.answer("🗑 Savatchangiz muvaffaqiyatli tozalandi!")
 
 @dp.callback_query(F.data == 'show_categories')
 async def show_categories(query: CallbackQuery):
