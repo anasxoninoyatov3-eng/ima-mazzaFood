@@ -13,6 +13,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW registered!', reg))
+            .catch(err => console.log('SW registration failed:', err));
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('mazza_clean_users_v2')) {
         localStorage.removeItem('mazza_users');
@@ -30,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkout = document.getElementById('checkout');
     const accountCount = document.getElementById('accountCount');
     const accountBtn = document.getElementById('accountBtn');
+
+    const signUpStep1 = document.getElementById('signUpStep1');
+    const signUpStep2 = document.getElementById('signUpStep2');
+    const suNextBtn = document.getElementById('suNextBtn');
+    const suBackBtn = document.getElementById('suBackBtn');
 
     const reviewForm = document.getElementById('reviewForm');
     const reviewName = document.getElementById('reviewName');
@@ -75,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateCartUI() {
+        if (!cartList || !cartTotal || !cartCount || !accountCount) return;
         cartList.innerHTML = '';
         let total = 0; let items = 0;
         Object.keys(cart).forEach(id => {
@@ -95,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         accountCount.textContent = accountTotal;
         if (items === 0) {
             cartList.innerHTML = '<li class="cart-item"><em>Savatchangiz bo\'sh.</em></li>';
-
         }
     }
 
@@ -197,8 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (siCancel) siCancel.addEventListener('click', () => closeAuthFn(true));
     if (suCancel) suCancel.addEventListener('click', () => closeAuthFn(true));
 
-    cartBtn.addEventListener('click', openCart);
-    closeCart.addEventListener('click', closeCartFn);
+    if (cartBtn) cartBtn.addEventListener('click', openCart);
+    if (closeCart) closeCart.addEventListener('click', closeCartFn);
 
     // "Return to Menu" button handler
     const returnToMenuBtn = document.getElementById('returnToMenu');
@@ -212,20 +227,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    clearCart.addEventListener('click', () => { cart = {}; updateCartUI(); });
-    checkout.addEventListener('click', () => {
-        if (Object.keys(cart).length === 0) { alert('Avval biror narsa qo\'shing.'); return }
-        populateOrderForm();
-        const cur = getCurrentUser();
-        if (cur) {
-            const nameEl = document.getElementById('customerName');
-            const phoneEl = document.getElementById('customerPhone');
-            if (nameEl && !nameEl.value) nameEl.value = cur.name || '';
-            if (phoneEl && !phoneEl.value) phoneEl.value = cur.phone || '';
-        }
-        orderModal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-    })
+    if (clearCart) clearCart.addEventListener('click', () => { cart = {}; updateCartUI(); });
+    if (checkout) {
+        checkout.addEventListener('click', () => {
+            if (Object.keys(cart).length === 0) { alert('Avval biror narsa qo\'shing.'); return }
+            populateOrderForm();
+            const cur = getCurrentUser();
+            if (cur) {
+                const nameEl = document.getElementById('customerName');
+                const phoneEl = document.getElementById('customerPhone');
+                if (nameEl && !nameEl.value) nameEl.value = cur.name || '';
+                if (phoneEl && !phoneEl.value) phoneEl.value = cur.phone || '';
+            }
+            if (orderModal) {
+                orderModal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+        })
+    }
 
     function showSignIn() {
         if (tabSignIn) tabSignIn.classList.add('active');
@@ -331,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAuthState() {
+        if (!accountBtn) return;
         const user = getCurrentUser();
         if (user) {
             accountBtn.innerHTML = `👤 <strong style="margin-left:6px">${escapeHtml(user.name.split(' ')[0] || user.phone)}</strong>`;
@@ -363,10 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentOtp = null;
     let currentOtpMessageId = null;
     let currentOtpChatId = null;
-    const suNextBtn = document.getElementById('suNextBtn');
-    const suBackBtn = document.getElementById('suBackBtn');
-    const signUpStep1 = document.getElementById('signUpStep1');
-    const signUpStep2 = document.getElementById('signUpStep2');
 
     if (suNextBtn) {
         suNextBtn.addEventListener('click', async () => {
@@ -518,48 +534,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // initialize header auth state
     renderAuthState();
 
-    // Check if user is logged in
-    const currentUser = getCurrentUser();
-    /* 
-    // Automatic registration prompt removed as per user request
-    if (!currentUser) {
-        const welcomeModal = document.getElementById('welcomeModal');
-        const goRegisterBtn = document.getElementById('goRegisterBtn');
-
-        if (welcomeModal && goRegisterBtn) {
-            welcomeModal.setAttribute('aria-hidden', 'false');
-
-            goRegisterBtn.addEventListener('click', () => {
-                welcomeModal.setAttribute('aria-hidden', 'true');
-                showSignUp(); // Open on Sign Up tab
-                openAuth();
-
-                if (closeAuth) closeAuth.style.display = 'none';
-                if (authModal) {
-                    authModal.removeEventListener('click', e => { if (e.target === authModal) closeAuthFn(); });
-                    authModal.onclick = null;
-                }
-            });
-        } else {
-            // fallback if welcome modal is missing
-            showSignUp();
-            openAuth();
-            if (closeAuth) closeAuth.style.display = 'none';
-            if (authModal) {
-                authModal.removeEventListener('click', e => { if (e.target === authModal) closeAuthFn(); });
-                authModal.onclick = null;
-            }
-        }
+    if (cartModal) {
+        cartModal.addEventListener('click', e => {
+            if (e.target === cartModal) closeCartFn();
+        })
     }
-    */
-
-    cartModal.addEventListener('click', e => {
-        if (e.target === cartModal) closeCartFn();
-    })
 
     if (authModal) {
         authModal.addEventListener('click', e => {
-            // Only allow closing if user is logged in
             if (getCurrentUser() && e.target === authModal) closeAuthFn();
         });
     }
@@ -586,17 +568,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (expanded) close(); else open();
         });
 
-        // close when a mobile link is clicked
         mobile.addEventListener('click', e => {
             if (e.target && e.target.matches('.mobile-link')) close();
         });
 
-        // close on pressing Escape
         document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     })();
 
     // Order modal handlers
     function populateOrderForm() {
+        if (!orderItemsEl) return;
         // Build two-column order layout: left = items + delivery options, right = summary
         orderItemsEl.innerHTML = '';
         const grid = document.createElement('div');
@@ -750,106 +731,111 @@ document.addEventListener('DOMContentLoaded', () => {
         orderItemsEl.appendChild(grid);
     }
 
-    function closeOrderFn() { 
-        orderModal.setAttribute('aria-hidden', 'true'); 
+    function closeOrderFn() {
+        orderModal.setAttribute('aria-hidden', 'true');
         if (!isAnyModalOpen()) document.body.style.overflow = '';
     }
     closeOrder.addEventListener('click', closeOrderFn);
     orderCancel.addEventListener('click', e => { e.preventDefault(); closeOrderFn(); });
     orderModal.addEventListener('click', e => { if (e.target === orderModal) closeOrderFn(); });
 
-    // Submit order form (demo: store order in localStorage and show confirmation)
-    orderForm.addEventListener('submit', async e => {
-        e.preventDefault();
-        const submitBtn = orderForm.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
+    if (orderForm) {
+        orderForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const submitBtn = orderForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.textContent : '';
 
-        const name = document.getElementById('customerName').value.trim();
-        const phone = document.getElementById('customerPhone').value.trim();
-        let address = document.getElementById('customerAddress').value.trim();
+            const nameEl = document.getElementById('customerName');
+            const phoneEl = document.getElementById('customerPhone');
+            const addrEl = document.getElementById('customerAddress');
 
-        // If pickup, address is not required
-        const delivery = window.__mazza_current_delivery || { fee: 0, eta: 0, method: 'standard' };
-        if (delivery.method === 'pickup') {
-            address = 'Olib ketish'; // Set default text for pickup
-        }
+            const name = nameEl ? nameEl.value.trim() : '';
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+            let address = addrEl ? addrEl.value.trim() : '';
 
-        // Validate name: only letters and spaces
-        if (!/^[A-Za-z\u0400-\u04FF\s\'\`]+$/.test(name)) {
-            alert('Ismda faqat harflar bo\'lishi kerak.');
-            return;
-        }
-
-        // Validate phone format: must be +998 followed by 9 digits
-        // AND strict provider code check (33, 50, 55, 70, 71, 77, 88, 90, 91, 93, 94, 95, 97, 98, 99)
-        if (!/^\+998(33|50|55|70|71|77|88|90|91|93|94|95|97|98|99)\d{7}$/.test(phone)) {
-            alert('Telefon raqami noto\'g\'ri formatda yoki O\'zbekiston kodi emas. Iltimos, +998 bilan boshlanadigan to\'g\'ri raqam kiriting (masalan: +998901234567).');
-            return;
-        }
-
-        if (!name || !phone || (!address && delivery.method !== 'pickup')) {
-            alert('Iltimos, barcha maydonlarni to\'ldiring.');
-            return;
-        }
-
-        function getLoc() {
-            return new Promise((resolve) => {
-                if (!navigator.geolocation) { resolve('Qurilma qo\'llab-quvvatlamaydi'); return; }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => resolve(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`),
-                    (err) => resolve('Joylashuv aniqlanmadi (ruxsat berilmagan)')
-                );
-            });
-        }
-
-        const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
-        // delivery is already defined above
-        const totalWithDelivery = subtotal + (Number(delivery.fee) || 0);
-
-        // Get selected payment method
-        const paymentSel = document.getElementById('paymentMethod');
-        const paymentMethod = paymentSel ? paymentSel.value : 'cash';
-
-        // Disable button and show loading state for geolocation
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Joylashuv olinmoqda...';
-        }
-
-        const orderLocation = await getLoc();
-
-        if (submitBtn) {
-            submitBtn.textContent = 'Yuborilmoqda...';
-        }
-
-        const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now(), location: orderLocation };
-
-        const orders = JSON.parse(localStorage.getItem('mazza_orders') || '[]');
-        orders.push(order);
-        localStorage.setItem('mazza_orders', JSON.stringify(orders));
-
-        // Try to notify backend (if available) which will forward to Telegram.
-        try {
-            const success = await sendOrderToBackend(order);
-            if (success) {
-                const eta = delivery && delivery.eta ? `${delivery.eta} daqiqa` : 'tez orada';
-                alert(`✅ Buyurtma qabul qilindi va Telegram orqali yuborildi! \nYetkazib berish: taxminan ${eta}. \nJami: ${formatPrice(totalWithDelivery)}`);
-            } else {
-                alert(`⚠️ Buyurtma saqlandi, lekin Telegramga yuborishda xatolik yuz berdi. Operatorlarimiz siz bilan bog'lanishadi.`);
+            // If pickup, address is not required
+            const delivery = window.__mazza_current_delivery || { fee: 0, eta: 0, method: 'standard' };
+            if (delivery.method === 'pickup') {
+                address = 'Olib ketish'; // Set default text for pickup
             }
-        } catch (err) {
-            console.error('Order sending error:', err);
-            alert(`⚠️ Xatolik yuz berdi: ${err.message}. Buyurtma faqat lokal saqlandi.`);
-        }
 
-        cart = {}; updateCartUI(); closeOrderFn(); closeCartFn();
+            // Validate name: only letters and spaces
+            if (!/^[A-Za-z\u0400-\u04FF\s\'\`]+$/.test(name)) {
+                alert('Ismda faqat harflar bo\'lishi kerak.');
+                return;
+            }
 
-        // Restore button state
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
-        }
-    })
+            // Validate phone format: must be +998 followed by 9 digits
+            // AND strict provider code check (33, 50, 55, 70, 71, 77, 88, 90, 91, 93, 94, 95, 97, 98, 99)
+            if (!/^\+998(33|50|55|70|71|77|88|90|91|93|94|95|97|98|99)\d{7}$/.test(phone)) {
+                alert('Telefon raqami noto\'g\'ri formatda yoki O\'zbekiston kodi emas. Iltimos, +998 bilan boshlanadigan to\'g\'ri raqam kiriting (masalan: +998901234567).');
+                return;
+            }
+
+            if (!name || !phone || (!address && delivery.method !== 'pickup')) {
+                alert('Iltimos, barcha maydonlarni to\'ldiring.');
+                return;
+            }
+
+            function getLoc() {
+                return new Promise((resolve) => {
+                    if (!navigator.geolocation) { resolve('Qurilma qo\'llab-quvvatlamaydi'); return; }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => resolve(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`),
+                        (err) => resolve('Joylashuv aniqlanmadi (ruxsat berilmagan)')
+                    );
+                });
+            }
+
+            const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
+            // delivery is already defined above
+            const totalWithDelivery = subtotal + (Number(delivery.fee) || 0);
+
+            // Get selected payment method
+            const paymentSel = document.getElementById('paymentMethod');
+            const paymentMethod = paymentSel ? paymentSel.value : 'cash';
+
+            // Disable button and show loading state for geolocation
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Joylashuv olinmoqda...';
+            }
+
+            const orderLocation = await getLoc();
+
+            if (submitBtn) {
+                submitBtn.textContent = 'Yuborilmoqda...';
+            }
+
+            const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now(), location: orderLocation };
+
+            const orders = JSON.parse(localStorage.getItem('mazza_orders') || '[]');
+            orders.push(order);
+            localStorage.setItem('mazza_orders', JSON.stringify(orders));
+
+            // Try to notify backend (if available) which will forward to Telegram.
+            try {
+                const success = await sendOrderToBackend(order);
+                if (success) {
+                    const eta = delivery && delivery.eta ? `${delivery.eta} daqiqa` : 'tez orada';
+                    alert(`✅ Buyurtma qabul qilindi va Telegram orqali yuborildi! \nYetkazib berish: taxminan ${eta}. \nJami: ${formatPrice(totalWithDelivery)}`);
+                } else {
+                    alert(`⚠️ Buyurtma saqlandi, lekin Telegramga yuborishda xatolik yuz berdi. Operatorlarimiz siz bilan bog'lanishadi.`);
+                }
+            } catch (err) {
+                console.error('Order sending error:', err);
+                alert(`⚠️ Xatolik yuz berdi: ${err.message}. Buyurtma faqat lokal saqlandi.`);
+            }
+
+            cart = {}; updateCartUI(); closeOrderFn(); closeCartFn();
+
+            // Restore button state
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        });
+    }
 
     // Attempt to post order to the server endpoint which forwards to Telegram.
     async function sendOrderToBackend(order) {
@@ -924,9 +910,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     detectCurrency();
     updateCartUI();
-    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const yearEl = document.getElementById('year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+
     // Render existing reviews
     function renderReviews() {
+        if (!reviewsList) return;
         reviewsList.innerHTML = '';
         if (!reviews || reviews.length === 0) {
             reviewsList.innerHTML = '<li class="review-item"><em>Hozircha sharhlar yo\'q. Birinchi bo\'ling!</em></li>';
@@ -1025,5 +1015,37 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPhoneInput('customerPhone');
     setupPhoneInput('suPhone');
     setupPhoneInput('siPhone');
+
+    // --- PWA Installation Logic (App functionality) ---
+    let deferredPrompt;
+
+    // Create an invisible button or use existing one if needed
+    // We'll add a listener to the window to capture the install event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('PWA: Ready to install');
+
+        // Show install invitation if it's the first visit or after some time
+        if (!localStorage.getItem('pwa_prompt_dismissed')) {
+            // Optional: show a custom snackbar or button
+        }
+    });
+
+    // Function to trigger installation (can be called from any button)
+    window.installMazzaApp = async () => {
+        if (!deferredPrompt) {
+            alert('Приложение уже установлено или ваш браузер не поддерживает установку.');
+            return;
+        }
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        deferredPrompt = null;
+    };
+
+    window.addEventListener('appinstalled', (evt) => {
+        console.log('Mazza Food was installed successfully');
+    });
 
 });

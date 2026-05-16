@@ -3,7 +3,9 @@
   "short_name": "Mazza Food",
   "description": "Mazza Food — Qo'qonda eng mazali va tez tayyorlanadigan fast food. Burger, pitsa, hotdog va lavashlar yetkazib berish xizmati.",
   "start_url": "/index.html",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#fdfbf7",
   "theme_color": "#ffc107",
   "icons": [
