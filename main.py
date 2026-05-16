@@ -1,29 +1,22 @@
+import os
 import asyncio
 import logging
 import sys
 from typing import Dict, Any
-
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiohttp import web
 
-# --- ASOSIY SOZLAMALAR ---
-# Buyurtma qabul qiladigan bot (Siz ko'rsatgan 1-token)
 TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
-
-# Adminga xabar yuboradigan ikkinchi bot (Siz ko'rsatgan 2-token)
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
-# DIQQAT: Xabar borishi kerak bo'lgan shaxsning Telegram ID raqami
-# (Buni @userinfobot orqali bilib olishingiz mumkin)
 ADMIN_CHAT_ID = 8283401187 
 
-# Botlarni ishga tushirish
 bot = Bot(token=TOKEN)
-admin_bot = Bot(token=ADMIN_BOT_TOKEN) # Ikkinchi bot orqali xabar yuborish uchun
+admin_bot = Bot(token=ADMIN_BOT_TOKEN) 
 dp = Dispatcher()
 
-# --- MAHSULOTLAR BAZASI ---
 products = {
     'burgers': [
         {'id': 'b1', 'name': 'Cheese Burger', 'price': 35000},
@@ -72,7 +65,6 @@ def get_session(chat_id: int):
         sessions[chat_id] = {'cart': {}, 'type': None, 'payment': None}
     return sessions[chat_id]
 
-# --- KLAVIATURALAR ---
 def get_start_menu():
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text='📜 Menyu (Taomlar)', callback_data='show_categories'))
@@ -88,7 +80,6 @@ def get_categories_menu():
     builder.row(InlineKeyboardButton(text='🔙 Bosh sahifa', callback_data='back_start'))
     return builder.as_markup()
 
-# --- HANDLERLAR ---
 @dp.message(CommandStart())
 async def command_start_handler(message: types.Message):
     await message.answer_photo(
@@ -198,7 +189,6 @@ async def finish_order(query: CallbackQuery):
     order_text += f"*Xaridor:* {query.from_user.full_name} (@{query.from_user.username})"
 
     try:
-        # Buyurtmani IKIKINCHI bot orqali adminga yuborish
         await admin_bot.send_message(ADMIN_CHAT_ID, order_text, parse_mode='Markdown')
     except Exception as e:
         logging.error(f"Xabar yuborishda xato: {e}")
@@ -207,8 +197,21 @@ async def finish_order(query: CallbackQuery):
     session['cart'] = {}
     await query.answer()
 
+async def handle(request):
+    return web.Response(text="Bot is running smoothly on Web Service mode!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+
 async def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.create_task(start_web_server())
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
