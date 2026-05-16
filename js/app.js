@@ -1,3 +1,18 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBVeJ7TQeQPEkqNuSx5Wo2yo3TecVxLSGk",
+    authDomain: "mazza-food.firebaseapp.com",
+    projectId: "mazza-food",
+    storageBucket: "mazza-food.firebasestorage.app",
+    messagingSenderId: "146730977047",
+    appId: "1:146730977047:web:b8255ff87f1f5495eb1952",
+    measurementId: "G-WJVLDP3KFW"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('mazza_clean_users_v2')) {
         localStorage.removeItem('mazza_users');
@@ -137,59 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openCart() {
         cartModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
     }
     function closeCartFn() {
         cartModal.setAttribute('aria-hidden', 'true');
+        if (!isAnyModalOpen()) document.body.style.overflow = '';
     }
 
-    // Auth Modal Handlers
-    function openAuth() {
-        if (authModal) authModal.setAttribute('aria-hidden', 'false');
-    }
-    function closeAuthFn(force = false) {
-        if (!force && !getCurrentUser()) return; // Don't close if forced login is active and user not logged in
-        if (authModal) authModal.setAttribute('aria-hidden', 'true');
-        // Restore close button visibility if user is now logged in
-        if (closeAuth) closeAuth.style.display = 'flex';
-        // Restore click outside listener if logged in
-        if (authModal) {
-            authModal.onclick = (e) => { if (e.target === authModal) closeAuthFn(); };
-        }
+    function isAnyModalOpen() {
+        return document.querySelector('.modal[aria-hidden="false"]') !== null;
     }
 
-    cartBtn.addEventListener('click', openCart);
-    closeCart.addEventListener('click', closeCartFn);
-
-    // "Return to Menu" button handler
-    const returnToMenuBtn = document.getElementById('returnToMenu');
-    if (returnToMenuBtn) {
-        returnToMenuBtn.addEventListener('click', () => {
-            closeCartFn();
-            // Scroll to menu section
-            const menuSection = document.getElementById('menu');
-            if (menuSection) {
-                menuSection.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    }
-
-    clearCart.addEventListener('click', () => { cart = {}; updateCartUI(); });
-    checkout.addEventListener('click', () => {
-        if (Object.keys(cart).length === 0) { alert('Avval biror narsa qo\'shing.'); return }
-        // Populate order modal with cart snapshot
-        populateOrderForm();
-        // Prefill from signed-in user if available
-        const cur = getCurrentUser();
-        if (cur) {
-            const nameEl = document.getElementById('customerName');
-            const phoneEl = document.getElementById('customerPhone');
-            if (nameEl && !nameEl.value) nameEl.value = cur.name || '';
-            if (phoneEl && !phoneEl.value) phoneEl.value = cur.phone || '';
-        }
-        orderModal.setAttribute('aria-hidden', 'false');
-    })
-
-    // --- Authentication (Sign in / Sign up) UI wiring ---
+    // Auth Modal Handlers - consolidated
     const authModal = document.getElementById('authModal');
     const closeAuth = document.getElementById('closeAuth');
     const tabSignIn = document.getElementById('tabSignIn');
@@ -200,12 +174,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const suCancel = document.getElementById('suCancel');
     const authMsg = document.getElementById('authMsg');
 
-    function openAuth() { if (authModal) authModal.setAttribute('aria-hidden', 'false'); }
-    function closeAuthFn() { if (authModal) authModal.setAttribute('aria-hidden', 'true'); }
+    function openAuth() {
+        if (authModal) {
+            authModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+    }
 
-    if (closeAuth) closeAuth.addEventListener('click', closeAuthFn);
-    if (siCancel) siCancel.addEventListener('click', closeAuthFn);
-    if (suCancel) suCancel.addEventListener('click', closeAuthFn);
+    function closeAuthFn(force = false) {
+        if (!force && !getCurrentUser()) return; // Don't close if forced login is active and user not logged in
+        if (authModal) authModal.setAttribute('aria-hidden', 'true');
+        if (!isAnyModalOpen()) document.body.style.overflow = '';
+        // Restore close button visibility if user is now logged in
+        if (closeAuth) closeAuth.style.display = 'flex';
+        // Restore click outside listener if logged in
+        if (authModal) {
+            authModal.onclick = (e) => { if (e.target === authModal) closeAuthFn(); };
+        }
+    }
+
+    if (closeAuth) closeAuth.addEventListener('click', () => closeAuthFn(true));
+    if (siCancel) siCancel.addEventListener('click', () => closeAuthFn(true));
+    if (suCancel) suCancel.addEventListener('click', () => closeAuthFn(true));
+
+    cartBtn.addEventListener('click', openCart);
+    closeCart.addEventListener('click', closeCartFn);
+
+    // "Return to Menu" button handler
+    const returnToMenuBtn = document.getElementById('returnToMenu');
+    if (returnToMenuBtn) {
+        returnToMenuBtn.addEventListener('click', () => {
+            closeCartFn();
+            const menuSection = document.getElementById('menu');
+            if (menuSection) {
+                menuSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+
+    clearCart.addEventListener('click', () => { cart = {}; updateCartUI(); });
+    checkout.addEventListener('click', () => {
+        if (Object.keys(cart).length === 0) { alert('Avval biror narsa qo\'shing.'); return }
+        populateOrderForm();
+        const cur = getCurrentUser();
+        if (cur) {
+            const nameEl = document.getElementById('customerName');
+            const phoneEl = document.getElementById('customerPhone');
+            if (nameEl && !nameEl.value) nameEl.value = cur.name || '';
+            if (phoneEl && !phoneEl.value) phoneEl.value = cur.phone || '';
+        }
+        orderModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    })
 
     function showSignIn() {
         if (tabSignIn) tabSignIn.classList.add('active');
@@ -730,7 +750,10 @@ document.addEventListener('DOMContentLoaded', () => {
         orderItemsEl.appendChild(grid);
     }
 
-    function closeOrderFn() { orderModal.setAttribute('aria-hidden', 'true'); }
+    function closeOrderFn() { 
+        orderModal.setAttribute('aria-hidden', 'true'); 
+        if (!isAnyModalOpen()) document.body.style.overflow = '';
+    }
     closeOrder.addEventListener('click', closeOrderFn);
     orderCancel.addEventListener('click', e => { e.preventDefault(); closeOrderFn(); });
     orderModal.addEventListener('click', e => { if (e.target === orderModal) closeOrderFn(); });
@@ -806,21 +829,17 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('mazza_orders', JSON.stringify(orders));
 
         // Try to notify backend (if available) which will forward to Telegram.
-        // This call is best-effort and will fail silently if no backend is running.
-        if (window.fetch) {
-            try {
-                await sendOrderToBackend(order);
-            } catch (err) {
-                console.error('Failed to send order to Telegram:', err);
-            }
-        }
-
-        // Demo confirmation and clear cart — include delivery ETA and total
         try {
-            const eta = delivery && delivery.eta ? `${delivery.eta} daqiqa` : 'tez orada';
-            alert(`Buyurtma qabul qilindi! Yetkazib berish (${delivery.method}) taxminan ${eta}. Jami: ${formatPrice(totalWithDelivery)}`);
+            const success = await sendOrderToBackend(order);
+            if (success) {
+                const eta = delivery && delivery.eta ? `${delivery.eta} daqiqa` : 'tez orada';
+                alert(`✅ Buyurtma qabul qilindi va Telegram orqali yuborildi! \nYetkazib berish: taxminan ${eta}. \nJami: ${formatPrice(totalWithDelivery)}`);
+            } else {
+                alert(`⚠️ Buyurtma saqlandi, lekin Telegramga yuborishda xatolik yuz berdi. Operatorlarimiz siz bilan bog'lanishadi.`);
+            }
         } catch (err) {
-            alert('Buyurtma qabul qilindi! Tez orada siz bilan bog\'lanamiz.');
+            console.error('Order sending error:', err);
+            alert(`⚠️ Xatolik yuz berdi: ${err.message}. Buyurtma faqat lokal saqlandi.`);
         }
 
         cart = {}; updateCartUI(); closeOrderFn(); closeCartFn();
@@ -833,18 +852,18 @@ document.addEventListener('DOMContentLoaded', () => {
     })
 
     // Attempt to post order to the server endpoint which forwards to Telegram.
-    function sendOrderToBackend(order) {
+    async function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
         const BOT_TOKEN = "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
-        const CHAT_IDS = ["5377787513"]; // Add more IDs here if needed
+        const CHAT_IDS = ["5377787513"];
 
         // Build message text
-        let text = `📦 Yangi buyurtma!\n\n`;
-        text += `🆔 ID: ${order.id || 'n/a'}\n`;
-        text += `👤 Mijoz: ${order.name}\n`;
-        text += `📞 Telefon: ${order.phone}\n`;
+        let text = `📦 *Yangi buyurtma!*\n\n`;
+        text += `🆔 ID: \`${order.id || 'n/a'}\`\n`;
+        text += `👤 Mijoz: *${order.name}*\n`;
+        text += `📞 Telefon: \`${order.phone}\`\n`;
         text += `📍 Manzil: ${order.address || '-'}\n\n`;
-        text += `🛒 Buyurtma tarkibi:\n`;
+        text += `🛒 *Buyurtma tarkibi:*\n`;
 
         try {
             const items = order.items || {};
@@ -858,18 +877,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const delivery = order.delivery || {};
         const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'standard');
-        text += `\n🚚 Yetkazib berish: ${deliveryMethod}`;
+        text += `\n🚚 Yetkazib berish: *${deliveryMethod}*`;
         if (delivery.fee) text += ` (${formatPrice(delivery.fee)})`;
 
         // Payment info
         const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
-        text += `\n💳 To'lov turi: ${payment}`;
+        text += `\n💳 To'lov turi: *${payment}*`;
 
         if (order.location) {
-            text += `\n🌍 Joylashuv (GPS): ${order.location}`;
+            text += `\n🌍 [Joylashuvni xaritada ko'rish](${order.location})`;
         }
 
-        text += `\n\n💰 Jami: ${formatPrice(order.total || 0)}`;
+        text += `\n\n💰 *Jami: ${formatPrice(order.total || 0)}*`;
 
         const d = new Date(order.ts || Date.now());
         const pad = n => n.toString().padStart(2, '0');
@@ -877,29 +896,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
         text += `\n🕒 Vaqt: ${dateStr}, ${timeStr}`;
 
-        // Send to all CHAT_IDS
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
-        return Promise.all(CHAT_IDS.map(chatId => {
-            return fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: text
-                })
-            }).then(res => res.json())
-                .then(data => {
-                    if (!data.ok) console.error('Telegram error:', data);
-                    return data;
-                })
-                .catch(err => {
-                    console.error('Fetch error:', err);
-                    throw err;
-                });
-        })).then(() => {
-            console.log('Order sent to Telegram');
-        });
+        try {
+            const results = await Promise.all(CHAT_IDS.map(chatId => {
+                return fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: text,
+                        parse_mode: 'Markdown'
+                    })
+                }).then(res => res.json());
+            }));
+
+            const allOk = results.every(res => res.ok);
+            if (!allOk) {
+                console.error('Some Telegram messages failed:', results);
+            }
+            return allOk;
+        } catch (err) {
+            console.error('Fetch error sending to Telegram:', err);
+            return false;
+        }
     }
 
     detectCurrency();
@@ -947,45 +967,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderReviews();
-
-    /*
-    // ---------- Card tilt/translate based on cursor X position ----------
-    (function setupCardTilt() {
-        const cards = document.querySelectorAll('.menu-grid .card');
-        if (!cards || cards.length === 0) return;
-
-        // disable on touch devices
-        const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-        if (isTouch) return;
-
-        cards.forEach(card => {
-            card.classList.add('card--tilt');
-            let raf = null;
-            card.addEventListener('mousemove', (ev) => {
-                const rect = card.getBoundingClientRect();
-                const cx = rect.left + rect.width / 2;
-                const dx = ev.clientX - cx; // negative = left, positive = right
-                const ratio = Math.max(-1, Math.min(1, dx / (rect.width / 2)));
-
-                // schedule via rAF for smoothness
-                if (raf) cancelAnimationFrame(raf);
-                raf = requestAnimationFrame(() => {
-                    const translateX = ratio * 12; // px
-                    const rotateY = -ratio * 6; // deg (tilt toward cursor)
-                    const translateY = Math.abs(ratio) * -6; // slight lift
-                    card.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotateY(${rotateY}deg) scale(1.02)`;
-                    card.style.boxShadow = `0 ${12 + Math.abs(ratio) * 20}px ${20 + Math.abs(ratio) * 40}px rgba(12,12,12,${0.08 + Math.abs(ratio) * 0.12})`;
-                });
-            });
-
-            card.addEventListener('mouseleave', () => {
-                if (raf) cancelAnimationFrame(raf);
-                card.style.transform = '';
-                card.style.boxShadow = '';
-            });
-        });
-    })();
-    */
 
     // Hero text entrance: add .animate class on load so heading, paragraph and CTA fade/slide in
     (function heroEntrance() {

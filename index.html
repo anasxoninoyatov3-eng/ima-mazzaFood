@@ -18,13 +18,16 @@
     <title>Mazza Food — Tez va Mazali</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="css/social.css">
 </head>
 
 <body>
-    <header class="site-header" role="banner">
+    <header class="site-header animate-fade" role="banner">
         <div class="container header-inner">
             <div class="brand">
                 <img src="https://cdn-icons-png.flaticon.com/512/3075/3075929.png" alt="Mazza icon" class="brand-icon"
@@ -166,7 +169,7 @@
     </nav>
 
     <main>
-        <section class="hero">
+        <section class="hero animate-up">
             <div class="container hero-inner">
                 <div class="hero-text">
                     <h1>Mazza Food-ga xush kelibsiz</h1>
@@ -174,14 +177,14 @@
                         daqiqada tayyor.</p>
                     <a class="btn primary" href="#menu">Hoziroq buyurtma bering</a>
                 </div>
-                <div class="hero-art" aria-hidden="true">
+                <div class="hero-art animate-scale" aria-hidden="true">
                     <img src="https://visittyumen.ru/upload/iblock/880/07w56rzbvyer42pyqg2o33f2b0do618u.webp"
                         alt="Delicious burger" class="hero-img"
                         style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
                 </div>
         </section>
 
-        <section class="features container" aria-label="Highlights">
+        <section class="features container animate-up" aria-label="Highlights" style="animation-delay: 0.2s;">
             <div class="features-grid">
                 <div class="feature-card" tabindex="0" aria-describedby="feat-delivery">
                     <div class="feature-inner">
@@ -218,7 +221,8 @@
             </div>
         </section>
 
-        <section id="menu" class="menu container" aria-labelledby="menu-heading">
+        <section id="menu" class="menu container animate-up" aria-labelledby="menu-heading"
+            style="animation-delay: 0.3s;">
             <h2 id="menu-heading">Menyu</h2>
             <p class="lead">Qo'l bilan tanlangan sevimlilar — tez tayyor.</p>
 
@@ -560,7 +564,7 @@
             </div>
         </div>
     </div>
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>
