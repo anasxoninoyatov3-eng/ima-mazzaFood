@@ -1016,36 +1016,4 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPhoneInput('suPhone');
     setupPhoneInput('siPhone');
 
-    // --- PWA Installation Logic (App functionality) ---
-    let deferredPrompt;
-
-    // Create an invisible button or use existing one if needed
-    // We'll add a listener to the window to capture the install event
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        console.log('PWA: Ready to install');
-
-        // Show install invitation if it's the first visit or after some time
-        if (!localStorage.getItem('pwa_prompt_dismissed')) {
-            // Optional: show a custom snackbar or button
-        }
-    });
-
-    // Function to trigger installation (can be called from any button)
-    window.installMazzaApp = async () => {
-        if (!deferredPrompt) {
-            alert('Приложение уже установлено или ваш браузер не поддерживает установку.');
-            return;
-        }
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User response to the install prompt: ${outcome}`);
-        deferredPrompt = null;
-    };
-
-    window.addEventListener('appinstalled', (evt) => {
-        console.log('Mazza Food was installed successfully');
-    });
-
 });
