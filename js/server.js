@@ -10,7 +10,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || 5377787513;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID || 8283401187;
 
 app.use(express.json());
 // Serve static files from the parent directory

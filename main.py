@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import sys
+import json
 from typing import Dict, Any
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
@@ -16,6 +17,20 @@ ADMIN_CHAT_ID = 8283401187
 bot = Bot(token=TOKEN)
 admin_bot = Bot(token=ADMIN_BOT_TOKEN) 
 dp = Dispatcher()
+
+# Database simulation for reviews
+REVIEWS_FILE = 'reviews.json'
+if not os.path.exists(REVIEWS_FILE):
+    with open(REVIEWS_FILE, 'w') as f:
+        json.dump([], f)
+
+def load_reviews():
+    with open(REVIEWS_FILE, 'r') as f:
+        return json.load(f)
+
+def save_reviews(reviews):
+    with open(REVIEWS_FILE, 'w') as f:
+        json.dump(reviews, f)
 
 products = {
     'burgers': [
@@ -95,12 +110,32 @@ async def command_menu_handler(message: types.Message):
 
 @dp.message(Command("clear"))
 async def command_clear_handler(message: types.Message):
-    session = get_session(message.chat.id)
-    if not session['cart']:
-        await message.answer("🛒 Savatchangiz allaqachon bo'sh.")
-    else:
-        session['cart'] = {}
-        await message.answer("🗑 Savatchangiz muvaffaqiyatli tozalandi!")
+    # --- НОВАЯ ЛОГИКА ПОЛНОЙ ОЧИСТКИ ЧАТА ---
+    # Получаем ID текущего сообщения как точку отсчета
+    current_msg_id = message.message_id
+    chat_id = message.chat.id
+    
+    # Удаляем сообщения в цикле (назад на 100 сообщений)
+    for msg_id in range(current_msg_id, current_msg_id - 100, -1):
+        try:
+            await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+        except Exception:
+            # Пропускаем, если сообщение старое (>48ч) или уже удалено
+            continue
+    
+    # Отправляем финальное уведомление
+    status_msg = await message.answer("🧹 Chat muvaffaqiyatli tozalandi!")
+    
+    # Ждем 3-4 секунды и удаляем само уведомление
+    await asyncio.sleep(3.5)
+    try:
+        await bot.delete_message(chat_id=chat_id, message_id=status_msg.message_id)
+    except Exception:
+        pass
+
+    # Очищаем также сессию корзины
+    session = get_session(chat_id)
+    session['cart'] = {}
 
 @dp.message(Command("about"))
 async def command_about_handler(message: types.Message):
@@ -116,6 +151,19 @@ async def command_about_handler(message: types.Message):
         "+99888-201-10-10"
     )
     await message.answer(about_text, parse_mode='Markdown')
+
+# --- НОВАЯ КОМАНДА /commands ---
+@dp.message(Command("commands"))
+async def command_list_handler(message: types.Message):
+    commands_text = (
+        "🤖 *Bot buyruqlari ro'yxati:*\n\n"
+        "🚀 /start — Botni ishga tushirish va asosiy menyu\n"
+        "🍽 /menu — Taomlar va kategoriyalar menyusi\n"
+        "🗑 /clear — Savatchani toliq tozalash\n"
+        "ℹ️ /about — Biz haqimizda va aloqa ma'lumotlari\n"
+        "📜 /commands — Hozirgi buyruqlar ro'yxati"
+    )
+    await message.answer(commands_text, parse_mode='Markdown')
 
 @dp.callback_query(F.data == 'show_categories')
 async def show_categories(query: CallbackQuery):
@@ -197,12 +245,71 @@ async def finish_order(query: CallbackQuery):
     session['cart'] = {}
     await query.answer()
 
+# --- REVIEW MODERATION HANDLERS ---
+@dp.callback_query(F.data.startswith('rev_'))
+async def moderate_review(query: CallbackQuery):
+    if query.from_user.id != ADMIN_CHAT_ID:
+        await query.answer("Siz admin emassiz!", show_alert=True)
+        return
+
+    parts = query.data.split('_')
+    action = parts[1] # 'approve' or 'delete'
+    review_id = parts[2]
+
+    # In a real app, we would update the status in a database.
+    # Here we'll just acknowledge the action for the admin.
+    
+    if action == 'approve':
+        await query.message.edit_caption(
+            caption=query.message.caption + "\n\n✅ *Tasdiqlandi!* Sharh saytda paydo bo'ladi.",
+            parse_mode='Markdown',
+            reply_markup=None
+        )
+        await query.answer("Sharh tasdiqlandi!")
+    else:
+        await query.message.edit_caption(
+            caption=query.message.caption + "\n\n❌ *O'chirildi!*",
+            parse_mode='Markdown',
+            reply_markup=None
+        )
+        await query.answer("Sharh o'chirildi!")
+
+async def handle_api(request):
+    try:
+        data = await request.json()
+        action = data.get('action')
+
+        if action == 'new_review':
+            review = data.get('review')
+            # Notify Admin
+            text = (
+                f"📝 *Yangi sharh (Moderatsiya)!*\n\n"
+                f"👤 Mijoz: *{review['name']}*\n"
+                f"⭐ Baho: {review['rating']} / 5\n"
+                f"💬 Matn: {review['text']}\n"
+            )
+            
+            builder = InlineKeyboardBuilder()
+            builder.row(
+                InlineKeyboardButton(text="✅ Qoldirish", callback_data=f"rev_approve_{review['ts']}"),
+                InlineKeyboardButton(text="❌ O'chirish", callback_data=f"rev_delete_{review['ts']}")
+            )
+            
+            await admin_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='Markdown', reply_markup=builder.as_markup())
+            return web.json_response({'ok': True})
+
+        return web.json_response({'ok': False, 'error': 'Unknown action'})
+    except Exception as e:
+        logging.error(f"API Error: {e}")
+        return web.json_response({'ok': False, 'error': str(e)})
+
 async def handle(request):
     return web.Response(text="Bot is running smoothly on Web Service mode!")
 
 async def start_web_server():
     app = web.Application()
     app.router.add_get('/', handle)
+    app.router.add_post('/api', handle_api)
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 10000))

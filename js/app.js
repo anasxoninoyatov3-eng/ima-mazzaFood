@@ -396,6 +396,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 else { alert('Iltimos, barcha maydonlarni to\'ldiring.'); }
                 return;
             }
+            
+            // Validate Uzbekistan phone format
+            if (!/^\+998\d{9}$/.test(phone)) {
+                if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Telefon raqami noto\'g\'ri (+998XXXXXXXXX).'; }
+                else { alert('Telefon raqami noto\'g\'ri (+998XXXXXXXXX).'); }
+                return;
+            }
+
             if (pw !== pw2) {
                 if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Parollar mos kelmadi.'; }
                 else { alert('Parollar mos kelmadi.'); }
@@ -415,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-                const ADMIN_CHAT_ID = "5377787513";
+                const ADMIN_CHAT_ID = "8283401187";
 
                 // Admin info
                 const adminText = `🔐 Ro'yxatdan o'tish so'rovi!\n\nMijoz: ${name}\nTelefon: ${phone}\nKod: ${currentOtp}`;
@@ -841,7 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
         const BOT_TOKEN = "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
-        const CHAT_IDS = ["5377787513"];
+        const CHAT_IDS = ["8283401187"];
 
         // Build message text
         let text = `📦 *Yangi buyurtma!*\n\n`;
@@ -982,7 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })();
 
     if (reviewForm) {
-        reviewForm.addEventListener('submit', e => {
+        reviewForm.addEventListener('submit', async e => {
             e.preventDefault();
             // Use registered user's name for reviews. Require sign-in if not present.
             const cur = getCurrentUser();
@@ -999,17 +1007,83 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Iltimos, qisqacha fikringizni yozing.');
                 return;
             }
+            
             const entry = { name, rating, text, ts: Date.now() };
-            reviews.push(entry);
-            localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
-            reviewForm.reset();
-            renderReviews();
+
+            // Send to moderation via Telegram bot API
+            try {
+                // We'll call the local bot API endpoint (main.py)
+                // In a production environment, this would be your server URL
+                const response = await fetch('http://localhost:10000/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'new_review',
+                        review: entry
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('✅ Rahmat! Sharhingiz yuborildi va moderator tasdig\'idan so\'ng saytda paydo bo\'ladi.');
+                    reviewForm.reset();
+                } else {
+                    // Fallback to local storage if API is not available
+                    reviews.push(entry);
+                    localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
+                    reviewForm.reset();
+                    renderReviews();
+                    alert('Sharh saqlandi (lokal).');
+                }
+            } catch (err) {
+                console.error('Moderation API error:', err);
+                // Fallback
+                reviews.push(entry);
+                localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
+                reviewForm.reset();
+                renderReviews();
+            }
         })
     }
 
     // --- Phone Number Input Formatting ---
     function setupPhoneInput(inputId) {
-        // Disabling automatic +998 filling based on user request
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.placeholder = '+998XXXXXXXXX';
+        
+        input.addEventListener('input', (e) => {
+            let value = e.target.value;
+            // Only allow + and digits
+            value = value.replace(/[^\d+]/g, '');
+            
+            // Ensure starts with +998
+            if (value.length > 0 && !value.startsWith('+')) {
+                value = '+' + value;
+            }
+            if (value.length >= 4 && !value.startsWith('+998')) {
+                value = '+998' + value.replace(/^\+?/, '').replace(/^998/, '');
+            }
+            
+            // Max length +998 + 9 digits = 13 chars
+            if (value.length > 13) {
+                value = value.slice(0, 13);
+            }
+            
+            e.target.value = value;
+        });
+
+        input.addEventListener('focus', (e) => {
+            if (!e.target.value) {
+                e.target.value = '+998';
+            }
+        });
+
+        input.addEventListener('blur', (e) => {
+            if (e.target.value === '+998') {
+                e.target.value = '';
+            }
+        });
     }
 
     setupPhoneInput('customerPhone');
