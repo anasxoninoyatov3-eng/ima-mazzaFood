@@ -758,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send order directly to Telegram API (works from Netlify static hosting)
     async function sendOrderToBackend(order) {
         const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-        const CHAT_ID = "5377787513";
+        const CHAT_ID = "8283401187";
 
         // Build plain text message (no HTML/Markdown to avoid parse errors)
         let text = '📦 Yangi buyurtma!\n\n';
