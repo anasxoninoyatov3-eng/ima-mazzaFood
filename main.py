@@ -340,11 +340,44 @@ async def handle_api(request):
             await admin_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='Markdown', reply_markup=builder.as_markup())
             return web.json_response({'ok': True}, headers=headers)
 
-        if action == 'send_otp':
-            phone = data.get('phone')
-            otp = data.get('otp')
-            success = await send_sms_api(phone, otp)
-            return web.json_response({'ok': success}, headers=headers)
+        if (action == 'submit_order'):
+            order = data.get('order')
+            
+            # Format message
+            text = "📦 <b>Yangi buyurtma!</b>\n\n"
+            text += f"👤 Mijoz: <b>{order.get('name', 'Noma\'lum')}</b>\n"
+            text += f"📞 Telefon: <code>{order.get('phone', 'Noma\'lum')}</code>\n"
+            text += f"📍 Manzil: {order.get('address', '-')}\n\n"
+            
+            text += "🛒 <b>Buyurtma tarkibi:</b>\n"
+            items = order.get('items', {})
+            for key in items:
+                it = items[key]
+                text += f"▫️ {it['name']} × {it['qty']} = {it['price'] * it['qty']:,} so'm\n"
+            
+            delivery = order.get('delivery', {})
+            d_method = "Olib ketish" if delivery.get('method') == 'pickup' else (delivery.get('method', 'standard'))
+            text += f"\n🚚 Yetkazib berish: <b>{d_method}</b>"
+            if delivery.get('fee'):
+                text += f" ({delivery['fee']:,} so'm)"
+            
+            payment = "💳 Click / Payme" if order.get('payment') == 'click' else "💵 Naqd"
+            text += f"\n💳 To'lov turi: <b>{payment}</b>"
+            text += f"\n\n💰 <b>Jami: {order.get('total', 0):,} so'm</b>"
+            
+            # Time format
+            from datetime import datetime
+            dt = datetime.fromtimestamp(order.get('ts', 0) / 1000)
+            text += f"\n🕒 Vaqt: {dt.strftime('%d.%m.%Y, %H:%M:%S')}"
+
+            # Use the specified Admin Bot
+            bot_to_use = Bot(token=ADMIN_BOT_TOKEN)
+            try:
+                await bot_to_use.send_message(ADMIN_CHAT_ID, text, parse_mode='HTML')
+            finally:
+                await bot_to_use.session.close()
+
+            return web.json_response({'ok': True}, headers=headers)
 
         return web.json_response({'ok': False, 'error': 'Unknown action'}, headers=headers)
     except Exception as e:

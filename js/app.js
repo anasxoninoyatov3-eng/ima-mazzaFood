@@ -757,70 +757,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attempt to post order to the server endpoint which forwards to Telegram.
     async function sendOrderToBackend(order) {
-        // Direct Telegram integration (client-side) for Netlify/static hosting support
-        const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-        const CHAT_IDS = ["5377787513"]; // Updated to correct User ID
-
-        // Build message text using the user's requested format
-        let text = `📦 Yangi buyurtma!\n\n`;
-        text += `🆔 ID: ${order.id || 'n/a'}\n`;
-        text += `👤 Mijoz: ${order.name}\n`;
-        text += `📞 Telefon: ${order.phone}\n`;
-        text += `📍 Manzil: ${order.address || '-'}\n\n`;
-        
-        text += `🛒 Buyurtma tarkibi:\n`;
+        // Backend API integration (replaces direct Telegram fetch)
+        const BACKEND_URL = "http://localhost:10000/api"; 
 
         try {
-            const items = order.items || {};
-            Object.keys(items).forEach(k => {
-                const it = items[k];
-                text += `▫️ ${it.name} × ${it.qty} = ${formatPrice(it.price * it.qty)}\n`;
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'submit_order',
+                    order: order
+                })
             });
-        } catch (e) {
-            text += '(mahsulotlarni o\'qib bo\'lmadi)\n';
-        }
 
-        const delivery = order.delivery || {};
-        const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'standard');
-        text += `\n🚚 Yetkazib berish: ${deliveryMethod}`;
-        if (delivery.fee) text += ` (${formatPrice(delivery.fee)})`;
-
-        // Payment info
-        const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
-        text += `\n💳 To'lov turi: ${payment}`;
-
-        text += `\n\n💰 Jami: ${formatPrice(order.total || 0)}`;
-
-        const d = new Date(order.ts || Date.now());
-        const pad = n => n.toString().padStart(2, '0');
-        const dateStr = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
-        const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        text += `\n🕒 Vaqt: ${dateStr}, ${timeStr}`;
-
-        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
-        try {
-            const results = await Promise.all(CHAT_IDS.map(chatId => {
-                return fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: text,
-                        parse_mode: 'HTML'
-                    })
-                }).then(res => res.json());
-            }));
-
-            const failed = results.find(res => !res.ok);
-            if (failed) {
-                console.error('Telegram messages failed:', failed);
-                alert(`Telegram tizim xatosi: ${failed.description || 'Noma\'lum xato'}`);
+            const resData = await response.json();
+            if (resData.ok) {
+                return true;
+            } else {
+                console.error('Backend rejected order:', resData.error);
                 return false;
             }
-            return true;
         } catch (err) {
-            console.error('Fetch error sending to Telegram:', err);
+            console.error('Fetch error sending to Backend:', err);
             return false;
         }
     }
