@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else { alert('Iltimos, barcha maydonlarni to\'ldiring.'); }
                 return;
             }
-            
+
             // Validate Uzbekistan phone format
             if (!/^\+998\d{9}$/.test(phone)) {
                 if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = 'Telefon raqami noto\'g\'ri (+998XXXXXXXXX).'; }
@@ -417,106 +417,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 2. Generate and Send OTP via SMS
-            currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
-            
+            const suNextBtnEl = document.getElementById('suNextBtn');
+            const originalBtnText = suNextBtnEl ? suNextBtnEl.textContent : '';
+            if (suNextBtnEl) {
+                suNextBtnEl.disabled = true;
+                suNextBtnEl.textContent = "Kuting...";
+            }
+
             try {
-                const response = await fetch('http://localhost:10000/api', { // backend Local serviser
-                    // O'zingiz qachon xostingga yuklasangiz, shuni haqiqiy server manziliga o'zgartirasiz.
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'send_otp',
-                        phone: phone,
-                        otp: currentOtp
-                    })
-                });
-                
-                if (response.ok) {
-                    console.log(`OTP request sent for ${phone}`);
-                } else {
-                    console.error("Backend error when sending OTP");
-                    // alert("SMS yuborishda xatolik yuz berdi. Iltimos keyinroq qayta urinib ko'ring.");
-                }
+                await registerUser(name, phone, pw);
+                renderAuthState();
+                closeAuthFn();
+                if (document.getElementById('suName')) document.getElementById('suName').value = '';
+                if (document.getElementById('suPhone')) document.getElementById('suPhone').value = '';
+                if (document.getElementById('suPassword')) document.getElementById('suPassword').value = '';
+                if (document.getElementById('suPassword2')) document.getElementById('suPassword2').value = '';
+                alert("Hisob yaratildi va muvaffaqiyatli tizimga kirildi.");
             } catch (err) {
-                console.error('Failed to send OTP via API:', err);
-                // alert("Server bilan bog'lanishda xatolik. Iltimos keyinroq qayta urinib ko'ring.");
-            }
-
-            // 3. UI Transition
-            if (signUpStep1) signUpStep1.style.display = 'none';
-            if (signUpStep2) signUpStep2.style.display = 'block';
-            if (authMsg) authMsg.style.display = 'none';
-        });
-    }
-
-    if (suBackBtn) {
-        suBackBtn.addEventListener('click', () => {
-            if (signUpStep2) signUpStep2.style.display = 'none';
-            if (signUpStep1) signUpStep1.style.display = 'block';
-        });
-    }
-
-    const suOtpInput = document.getElementById('suOtp');
-    if (suOtpInput) {
-        suOtpInput.addEventListener('input', (e) => {
-            const enteredOtp = e.target.value.trim();
-            if (enteredOtp === currentOtp && currentOtp !== null) {
-                // Instantly delete the message
-                if (currentOtpMessageId && currentOtpChatId) {
-                    const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-                    fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/deleteMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: currentOtpChatId, message_id: currentOtpMessageId })
-                    }).catch(() => { });
-                    currentOtpMessageId = null;
-                    currentOtpChatId = null;
+                if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); }
+                else { alert(err.message || String(err)); }
+            } finally {
+                if (suNextBtnEl) {
+                    suNextBtnEl.disabled = false;
+                    suNextBtnEl.textContent = originalBtnText;
                 }
-
-                // Optional: Auto-submit form when code is fully typed correctly
-                // if (signUpForm) signUpForm.dispatchEvent(new Event('submit'));
             }
         });
     }
 
-    async function handleSignUp(e) {
-        e.preventDefault();
-        const enteredOtp = (document.getElementById('suOtp') || {}).value.trim();
-
-        if (enteredOtp !== currentOtp) {
-            alert('Tasdiqlash kodi noto\'g\'ri!');
-            return;
-        }
-
-        const name = (document.getElementById('suName') || {}).value.trim();
-        const phone = (document.getElementById('suPhone') || {}).value.trim();
-        const pw = (document.getElementById('suPassword') || {}).value;
-
-        try {
-            await registerUser(name, phone, pw);
-
-            // Try to delete the bot OTP message
-            if (currentOtpMessageId && currentOtpChatId) {
-                const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-                fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/deleteMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: currentOtpChatId, message_id: currentOtpMessageId })
-                }).catch(() => { });
-            }
-
-            renderAuthState();
-            closeAuthFn();
-            if (signUpStep2) signUpStep2.style.display = 'none';
-            if (signUpStep1) signUpStep1.style.display = 'block';
-            if (document.getElementById('suOtp')) document.getElementById('suOtp').value = '';
-            alert('Hisob yaratildi va muvaffaqiyatli tizimga kirildi.');
-        } catch (err) {
-            if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); }
-            else { alert(err.message || String(err)); }
-        }
-    }
 
     async function handleSignIn(e) {
         e.preventDefault();
@@ -787,37 +715,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            function getLoc() {
-                return new Promise((resolve) => {
-                    if (!navigator.geolocation) { resolve('Qurilma qo\'llab-quvvatlamaydi'); return; }
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => resolve(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`),
-                        (err) => resolve('Joylashuv aniqlanmadi (ruxsat berilmagan)')
-                    );
-                });
-            }
-
             const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
-            // delivery is already defined above
             const totalWithDelivery = subtotal + (Number(delivery.fee) || 0);
 
             // Get selected payment method
             const paymentSel = document.getElementById('paymentMethod');
             const paymentMethod = paymentSel ? paymentSel.value : 'cash';
 
-            // Disable button and show loading state for geolocation
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Joylashuv olinmoqda...';
-            }
-
-            const orderLocation = await getLoc();
-
-            if (submitBtn) {
                 submitBtn.textContent = 'Yuborilmoqda...';
             }
 
-            const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now(), location: orderLocation };
+            const order = { id: 'ord_' + Date.now(), name, phone, address, items: cart, subtotal, delivery, total: totalWithDelivery, payment: paymentMethod, ts: Date.now() };
 
             const orders = JSON.parse(localStorage.getItem('mazza_orders') || '[]');
             orders.push(order);
@@ -880,9 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
         text += `\n💳 To'lov turi: *${payment}*`;
 
-        if (order.location) {
-            text += `\n🌍 [Joylashuvni xaritada ko'rish](${order.location})`;
-        }
 
         text += `\n\n💰 *Jami: ${formatPrice(order.total || 0)}*`;
 
@@ -1009,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Iltimos, qisqacha fikringizni yozing.');
                 return;
             }
-            
+
             const entry = { name, rating, text, ts: Date.now() };
 
             // Send to moderation via Telegram bot API
@@ -1024,7 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         review: entry
                     })
                 });
-                
+
                 if (response.ok) {
                     alert('✅ Rahmat! Sharhingiz yuborildi va moderator tasdig\'idan so\'ng saytda paydo bo\'ladi.');
                     reviewForm.reset();
@@ -1053,12 +960,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!input) return;
 
         input.placeholder = '+998XXXXXXXXX';
-        
+
         input.addEventListener('input', (e) => {
             let value = e.target.value;
             // Only allow + and digits
             value = value.replace(/[^\d+]/g, '');
-            
+
             // Ensure starts with +998
             if (value.length > 0 && !value.startsWith('+')) {
                 value = '+' + value;
@@ -1066,12 +973,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (value.length >= 4 && !value.startsWith('+998')) {
                 value = '+998' + value.replace(/^\+?/, '').replace(/^998/, '');
             }
-            
+
             // Max length +998 + 9 digits = 13 chars
             if (value.length > 13) {
                 value = value.slice(0, 13);
             }
-            
+
             e.target.value = value;
         });
 
