@@ -739,8 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (success) {
                     const eta = delivery && delivery.eta ? `${delivery.eta} daqiqa` : 'tez orada';
                     alert(`✅ Buyurtma qabul qilindi va Telegram orqali yuborildi! \nYetkazib berish: taxminan ${eta}. \nJami: ${formatPrice(totalWithDelivery)}`);
-                } else {
-                    alert(`⚠️ Buyurtma saqlandi, lekin Telegramga yuborishda xatolik yuz berdi. Operatorlarimiz siz bilan bog'lanishadi.`);
                 }
             } catch (err) {
                 console.error('Order sending error:', err);
@@ -760,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attempt to post order to the server endpoint which forwards to Telegram.
     async function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
-        const BOT_TOKEN = "8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c";
+        const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
         const CHAT_IDS = ["5377787513"]; // Updated to correct User ID
 
         // Build message text using HTML safe tags
