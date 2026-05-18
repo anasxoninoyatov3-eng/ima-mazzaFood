@@ -12,7 +12,7 @@ from aiohttp import web
 
 TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
-ADMIN_CHAT_ID = 8283401187 
+ADMIN_CHAT_ID = 5377787513 
 
 # --- SMS GATEWAY CONFIG ---
 SMS_API_KEY = "b84499890e0e572ffb6a7fb0952aee0d1d73254806bb183b"
@@ -371,11 +371,18 @@ async def handle_api(request):
             text += f"\n🕒 Vaqt: {dt.strftime('%d.%m.%Y, %H:%M:%S')}"
 
             # Use the specified Admin Bot
-            bot_to_use = Bot(token=ADMIN_BOT_TOKEN)
+            # Important: Since we are using an external Admin Bot (Kokand Mazza Food Bot), 
+            # we must ensure the bot session is handled correctly.
+            from aiogram import Bot
+            order_bot = Bot(token=ADMIN_BOT_TOKEN)
             try:
-                await bot_to_use.send_message(ADMIN_CHAT_ID, text, parse_mode='HTML')
+                await order_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='HTML')
+                logging.info(f"Order {order.get('id')} sent successfully via Admin Bot")
+            except Exception as e:
+                logging.error(f"Failed to send order message: {e}")
+                raise e
             finally:
-                await bot_to_use.session.close()
+                await order_bot.session.close()
 
             return web.json_response({'ok': True}, headers=headers)
 
