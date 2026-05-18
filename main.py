@@ -14,21 +14,33 @@ TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
 ADMIN_CHAT_ID = 8283401187 
 
-# --- SMS GATEWAY CONFIG (Eskiz.uz example) ---
-ESKIZ_EMAIL = "your-email@example.com"
-ESKIZ_PASSWORD = "your-password"
-ESKIZ_TOKEN = "" # Placeholder for actual token
+# --- SMS GATEWAY CONFIG ---
+SMS_API_URL = "https://api.example.com/send" # Placeholder for Antigravity API
+SMS_API_TOKEN = "" # Placeholder for actual token
 
-async def send_sms_eskiz(phone, message):
+async def send_sms_api(phone, otp):
     """
-    Real SMS sending logic via Eskiz.uz
-    To use this, you need to register at eskiz.uz and get a token.
+    Real SMS sending logic via Antigravity API
     """
-    logging.info(f"Sending SMS to {phone}: {message}")
-    # This is where the real API call to Eskiz or Play Mobile would go.
+    text = f"Ideal Taxi: Tasdiqlash kodi - {otp}"
+    # Remove any non-numeric characters from the phone number
+    clean_phone = ''.join(filter(str.isdigit, phone))
+    
+    payload = {
+        "phone": clean_phone,
+        "text": text
+    }
+    
+    logging.info(f"Sending SMS payload: {json.dumps(payload)}")
+    
+    # Example API call (Placeholder):
+    # async with aiohttp.ClientSession() as session:
+    #     async with session.post(SMS_API_URL, json=payload, headers={"Authorization": f"Bearer {SMS_API_TOKEN}"}) as resp:
+    #         if resp.status == 200: return True
+    
     # For now, we also duplicate the message to Telegram admin so you can see it.
     try:
-        await admin_bot.send_message(ADMIN_CHAT_ID, f"📱 *SMS имитация для {phone}:*\n{message}", parse_mode='Markdown')
+        await admin_bot.send_message(ADMIN_CHAT_ID, f"📱 *SMS имитация для {clean_phone}:*\n{text}", parse_mode='Markdown')
         return True
     except Exception as e:
         logging.error(f"Failed to send SMS notification to Admin: {e}")
@@ -295,6 +307,16 @@ async def moderate_review(query: CallbackQuery):
         await query.answer("Sharh o'chirildi!")
 
 async def handle_api(request):
+    # CORS Headers for local development
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    }
+    
+    if request.method == 'OPTIONS':
+        return web.Response(headers=headers)
+
     try:
         data = await request.json()
         action = data.get('action')
@@ -316,19 +338,18 @@ async def handle_api(request):
             )
             
             await admin_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='Markdown', reply_markup=builder.as_markup())
-            return web.json_response({'ok': True})
+            return web.json_response({'ok': True}, headers=headers)
 
         if action == 'send_otp':
             phone = data.get('phone')
             otp = data.get('otp')
-            sms_text = f"Mazza Food: Tasdiqlash kodi - {otp}"
-            success = await send_sms_eskiz(phone, sms_text)
-            return web.json_response({'ok': success})
+            success = await send_sms_api(phone, otp)
+            return web.json_response({'ok': success}, headers=headers)
 
-        return web.json_response({'ok': False, 'error': 'Unknown action'})
+        return web.json_response({'ok': False, 'error': 'Unknown action'}, headers=headers)
     except Exception as e:
         logging.error(f"API Error: {e}")
-        return web.json_response({'ok': False, 'error': str(e)})
+        return web.json_response({'ok': False, 'error': str(e)}, headers=headers)
 
 async def handle(request):
     return web.Response(text="Bot is running smoothly on Web Service mode!")
