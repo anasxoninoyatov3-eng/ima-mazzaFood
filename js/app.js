@@ -421,7 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
             
             try {
-                const response = await fetch('http://localhost:10000/api', {
+                const response = await fetch('https://mazzafood.up.railway.app/api', { // or your real backend URL
+                    // Changed from localhost to a relative or production URL if possible, otherwise it will fail on the live site
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -432,14 +433,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 if (response.ok) {
-                    console.log(`OTP ${currentOtp} sent to ${phone}`);
+                    console.log(`OTP request sent for ${phone}`);
                 } else {
-                    // Fallback to alert if backend is down
-                    alert(`Tasdiqlash kodi: ${currentOtp}`);
+                    console.error("Backend error when sending OTP");
+                    // alert("SMS yuborishda xatolik yuz berdi. Iltimos keyinroq qayta urinib ko'ring.");
                 }
             } catch (err) {
                 console.error('Failed to send OTP via API:', err);
-                alert(`Tasdiqlash kodi: ${currentOtp}`);
+                // alert("Server bilan bog'lanishda xatolik. Iltimos keyinroq qayta urinib ko'ring.");
             }
 
             // 3. UI Transition
