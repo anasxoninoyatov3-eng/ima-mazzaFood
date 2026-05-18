@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mazza-food-v2';
+const CACHE_NAME = 'mazza-food-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
 
 // Install Service Worker
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Force the waiting service worker to become the active service worker.
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -19,6 +20,9 @@ self.addEventListener('install', (event) => {
 
 // Activate Service Worker
 self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    self.clients.claim() // Claim any currently available clients once the worker is activated
+  );
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
