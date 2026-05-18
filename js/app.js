@@ -761,13 +761,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
         const CHAT_IDS = ["5377787513"]; // Updated to correct User ID
 
-        // Build message text using HTML safe tags
-        let text = `📦 <b>Yangi buyurtma!</b>\n\n`;
-        text += `🆔 ID: <code>${order.id || 'n/a'}</code>\n`;
-        text += `👤 Mijoz: <b>${order.name}</b>\n`;
-        text += `📞 Telefon: <code>${order.phone}</code>\n`;
+        // Build message text using the user's requested format
+        let text = `📦 Yangi buyurtma!\n\n`;
+        text += `🆔 ID: ${order.id || 'n/a'}\n`;
+        text += `👤 Mijoz: ${order.name}\n`;
+        text += `📞 Telefon: ${order.phone}\n`;
         text += `📍 Manzil: ${order.address || '-'}\n\n`;
-        text += `🛒 <b>Buyurtma tarkibi:</b>\n`;
+        
+        text += `🛒 Buyurtma tarkibi:\n`;
 
         try {
             const items = order.items || {};
@@ -781,14 +782,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const delivery = order.delivery || {};
         const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'standard');
-        text += `\n🚚 Yetkazib berish: <b>${deliveryMethod}</b>`;
+        text += `\n🚚 Yetkazib berish: ${deliveryMethod}`;
         if (delivery.fee) text += ` (${formatPrice(delivery.fee)})`;
 
         // Payment info
         const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
-        text += `\n💳 To'lov turi: <b>${payment}</b>`;
+        text += `\n💳 To'lov turi: ${payment}`;
 
-        text += `\n\n💰 <b>Jami: ${formatPrice(order.total || 0)}</b>`;
+        text += `\n\n💰 Jami: ${formatPrice(order.total || 0)}`;
 
         const d = new Date(order.ts || Date.now());
         const pad = n => n.toString().padStart(2, '0');
