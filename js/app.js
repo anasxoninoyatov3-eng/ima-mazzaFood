@@ -421,8 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
             
             try {
-                const response = await fetch('https://mazzafood.up.railway.app/api', { // or your real backend URL
-                    // Changed from localhost to a relative or production URL if possible, otherwise it will fail on the live site
+                const response = await fetch('http://localhost:10000/api', { // backend Local serviser
+                    // O'zingiz qachon xostingga yuklasangiz, shuni haqiqiy server manziliga o'zgartirasiz.
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
