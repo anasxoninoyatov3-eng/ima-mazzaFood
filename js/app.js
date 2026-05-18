@@ -760,16 +760,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attempt to post order to the server endpoint which forwards to Telegram.
     async function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
-        const BOT_TOKEN = "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
+        const BOT_TOKEN = "8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c";
         const CHAT_IDS = ["8283401187"];
 
-        // Build message text
-        let text = `📦 *Yangi buyurtma!*\n\n`;
-        text += `🆔 ID: \`${order.id || 'n/a'}\`\n`;
-        text += `👤 Mijoz: *${order.name}*\n`;
-        text += `📞 Telefon: \`${order.phone}\`\n`;
+        // Build message text using HTML safe tags
+        let text = `📦 <b>Yangi buyurtma!</b>\n\n`;
+        text += `🆔 ID: <code>${order.id || 'n/a'}</code>\n`;
+        text += `👤 Mijoz: <b>${order.name}</b>\n`;
+        text += `📞 Telefon: <code>${order.phone}</code>\n`;
         text += `📍 Manzil: ${order.address || '-'}\n\n`;
-        text += `🛒 *Buyurtma tarkibi:*\n`;
+        text += `🛒 <b>Buyurtma tarkibi:</b>\n`;
 
         try {
             const items = order.items || {};
@@ -783,15 +783,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const delivery = order.delivery || {};
         const deliveryMethod = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'standard');
-        text += `\n🚚 Yetkazib berish: *${deliveryMethod}*`;
+        text += `\n🚚 Yetkazib berish: <b>${deliveryMethod}</b>`;
         if (delivery.fee) text += ` (${formatPrice(delivery.fee)})`;
 
         // Payment info
         const payment = order.payment === 'click' ? '💳 Click / Payme' : '💵 Naqd';
-        text += `\n💳 To'lov turi: *${payment}*`;
+        text += `\n💳 To'lov turi: <b>${payment}</b>`;
 
-
-        text += `\n\n💰 *Jami: ${formatPrice(order.total || 0)}*`;
+        text += `\n\n💰 <b>Jami: ${formatPrice(order.total || 0)}</b>`;
 
         const d = new Date(order.ts || Date.now());
         const pad = n => n.toString().padStart(2, '0');
@@ -809,7 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         chat_id: chatId,
                         text: text,
-                        parse_mode: 'Markdown'
+                        parse_mode: 'HTML'
                     })
                 }).then(res => res.json());
             }));
