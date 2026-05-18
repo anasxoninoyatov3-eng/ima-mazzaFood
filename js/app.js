@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendOrderToBackend(order) {
         // Direct Telegram integration (client-side) for Netlify/static hosting support
         const BOT_TOKEN = "8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c";
-        const CHAT_IDS = ["8283401187"];
+        const CHAT_IDS = ["5377787513"]; // Updated to correct User ID
 
         // Build message text using HTML safe tags
         let text = `📦 <b>Yangi buyurtma!</b>\n\n`;
@@ -813,11 +813,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).then(res => res.json());
             }));
 
-            const allOk = results.every(res => res.ok);
-            if (!allOk) {
-                console.error('Some Telegram messages failed:', results);
+            const failed = results.find(res => !res.ok);
+            if (failed) {
+                console.error('Telegram messages failed:', failed);
+                alert(`Telegram tizim xatosi: ${failed.description || 'Noma\'lum xato'}`);
+                return false;
             }
-            return allOk;
+            return true;
         } catch (err) {
             console.error('Fetch error sending to Telegram:', err);
             return false;

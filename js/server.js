@@ -28,7 +28,7 @@ app.post('/api/send-order', (req, res) => {
     if (order.phone) lines.push(`📞 ${order.phone}`);
     if (order.address) lines.push(`📍 ${order.address}`);
     lines.push('');
-    lines.push('Items:');
+    lines.push('Items:');x``
 
     if (order.items && typeof order.items === 'object') {
         Object.values(order.items).forEach(it => {
