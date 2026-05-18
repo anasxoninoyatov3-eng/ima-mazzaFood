@@ -466,7 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (signUpForm) signUpForm.addEventListener('submit', handleSignUp);
     if (signInForm) signInForm.addEventListener('submit', handleSignIn);
 
     // initialize header auth state
@@ -678,8 +677,9 @@ document.addEventListener('DOMContentLoaded', () => {
     orderModal.addEventListener('click', e => { if (e.target === orderModal) closeOrderFn(); });
 
     if (orderForm) {
-        orderForm.addEventListener('submit', async e => {
+        orderForm.onsubmit = async (e) => {
             e.preventDefault();
+            e.stopPropagation();
             const submitBtn = orderForm.querySelector('button[type="submit"]');
             const originalBtnText = submitBtn ? submitBtn.textContent : '';
 
@@ -755,206 +755,206 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Attempt to post order to the server endpoint which forwards to Telegram.
-    async function sendOrderToBackend(order) {
-        // Backend API integration (replaces direct Telegram fetch)
-        const BACKEND_URL = "http://localhost:10000/api"; 
+// Attempt to post order to the server endpoint which forwards to Telegram.
+async function sendOrderToBackend(order) {
+    // Backend API integration (replaces direct Telegram fetch)
+    const BACKEND_URL = "http://localhost:10000/api";
 
+    try {
+        const response = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'submit_order',
+                order: order
+            })
+        });
+
+        const resData = await response.json();
+        if (resData.ok) {
+            return true;
+        } else {
+            console.error('Backend rejected order:', resData.error);
+            return false;
+        }
+    } catch (err) {
+        console.error('Fetch error sending to Backend:', err);
+        return false;
+    }
+}
+
+detectCurrency();
+updateCartUI();
+
+const yearEl = document.getElementById('year');
+if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+// Render existing reviews
+function renderReviews() {
+    if (!reviewsList) return;
+    reviewsList.innerHTML = '';
+    if (!reviews || reviews.length === 0) {
+        reviewsList.innerHTML = '<li class="review-item"><em>Hozircha sharhlar yo\'q. Birinchi bo\'ling!</em></li>';
+        return;
+    }
+    reviews.slice().reverse().forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'review-item';
+
+        const currentUser = getCurrentUser();
+        let deleteBtnHtml = '';
+        if (currentUser && currentUser.role === 'admin') {
+            deleteBtnHtml = `<button class="review-delete" data-ts="${r.ts}" aria-label="Delete review">O'chirish</button>`;
+        }
+
+        li.innerHTML = `<div class="review-meta"><strong>${escapeHtml(r.name)}</strong> — ${r.rating} ⭐ • <small>${new Date(r.ts).toLocaleString()}</small> ${deleteBtnHtml}</div><div class="review-body">${escapeHtml(r.text)}</div>`;
+        reviewsList.appendChild(li);
+    })
+}
+
+// Delete review via delegation
+reviewsList.addEventListener('click', e => {
+    if (e.target && e.target.classList.contains('review-delete')) {
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.role === 'admin') {
+            const ts = Number(e.target.dataset.ts);
+            reviews = reviews.filter(r => r.ts !== ts);
+            localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
+            renderReviews();
+        } else {
+            alert('Sizda bu sharhni o\'chirish huquqi yo\'q!');
+        }
+    }
+})
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+renderReviews();
+
+// Hero text entrance: add .animate class on load so heading, paragraph and CTA fade/slide in
+(function heroEntrance() {
+    const hero = document.querySelector('.hero-text');
+    if (!hero) return;
+
+    // small delay so assets settle and CSS transitions run
+    window.requestAnimationFrame(() => {
+        setTimeout(() => {
+            hero.classList.add('animate');
+        }, 80);
+    });
+
+    // If user navigates back / forward, ensure animation runs again
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) {
+            // force reflow then re-add class
+            hero.classList.remove('animate');
+            void hero.offsetWidth;
+            setTimeout(() => hero.classList.add('animate'), 50);
+        }
+    });
+})();
+
+if (reviewForm) {
+    reviewForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        // Use registered user's name for reviews. Require sign-in if not present.
+        const cur = getCurrentUser();
+        if (!cur) {
+            alert('Iltimos, sharh qoldirish uchun tizimga kiring yoki hisob yarating.');
+            showSignIn();
+            openAuth();
+            return;
+        }
+        const name = cur.name || cur.phone || 'Foydalanuvchi';
+        const rating = parseInt(reviewRating.value, 10) || 5;
+        const text = reviewText.value.trim();
+        if (!text) {
+            alert('Iltimos, qisqacha fikringizni yozing.');
+            return;
+        }
+
+        const entry = { name, rating, text, ts: Date.now() };
+
+        // Send to moderation via Telegram bot API
         try {
-            const response = await fetch(BACKEND_URL, {
+            // We'll call the local bot API endpoint (main.py)
+            // In a production environment, this would be your server URL
+            const response = await fetch('http://localhost:10000/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'submit_order',
-                    order: order
+                    action: 'new_review',
+                    review: entry
                 })
             });
 
-            const resData = await response.json();
-            if (resData.ok) {
-                return true;
+            if (response.ok) {
+                alert('✅ Rahmat! Sharhingiz yuborildi va moderator tasdig\'idan so\'ng saytda paydo bo\'ladi.');
+                reviewForm.reset();
             } else {
-                console.error('Backend rejected order:', resData.error);
-                return false;
-            }
-        } catch (err) {
-            console.error('Fetch error sending to Backend:', err);
-            return false;
-        }
-    }
-
-    detectCurrency();
-    updateCartUI();
-
-    const yearEl = document.getElementById('year');
-    if (yearEl) yearEl.textContent = new Date().getFullYear();
-
-    // Render existing reviews
-    function renderReviews() {
-        if (!reviewsList) return;
-        reviewsList.innerHTML = '';
-        if (!reviews || reviews.length === 0) {
-            reviewsList.innerHTML = '<li class="review-item"><em>Hozircha sharhlar yo\'q. Birinchi bo\'ling!</em></li>';
-            return;
-        }
-        reviews.slice().reverse().forEach(r => {
-            const li = document.createElement('li');
-            li.className = 'review-item';
-
-            const currentUser = getCurrentUser();
-            let deleteBtnHtml = '';
-            if (currentUser && currentUser.role === 'admin') {
-                deleteBtnHtml = `<button class="review-delete" data-ts="${r.ts}" aria-label="Delete review">O'chirish</button>`;
-            }
-
-            li.innerHTML = `<div class="review-meta"><strong>${escapeHtml(r.name)}</strong> — ${r.rating} ⭐ • <small>${new Date(r.ts).toLocaleString()}</small> ${deleteBtnHtml}</div><div class="review-body">${escapeHtml(r.text)}</div>`;
-            reviewsList.appendChild(li);
-        })
-    }
-
-    // Delete review via delegation
-    reviewsList.addEventListener('click', e => {
-        if (e.target && e.target.classList.contains('review-delete')) {
-            const currentUser = getCurrentUser();
-            if (currentUser && currentUser.role === 'admin') {
-                const ts = Number(e.target.dataset.ts);
-                reviews = reviews.filter(r => r.ts !== ts);
-                localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
-                renderReviews();
-            } else {
-                alert('Sizda bu sharhni o\'chirish huquqi yo\'q!');
-            }
-        }
-    })
-
-    function escapeHtml(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    renderReviews();
-
-    // Hero text entrance: add .animate class on load so heading, paragraph and CTA fade/slide in
-    (function heroEntrance() {
-        const hero = document.querySelector('.hero-text');
-        if (!hero) return;
-
-        // small delay so assets settle and CSS transitions run
-        window.requestAnimationFrame(() => {
-            setTimeout(() => {
-                hero.classList.add('animate');
-            }, 80);
-        });
-
-        // If user navigates back / forward, ensure animation runs again
-        window.addEventListener('pageshow', (e) => {
-            if (e.persisted) {
-                // force reflow then re-add class
-                hero.classList.remove('animate');
-                void hero.offsetWidth;
-                setTimeout(() => hero.classList.add('animate'), 50);
-            }
-        });
-    })();
-
-    if (reviewForm) {
-        reviewForm.addEventListener('submit', async e => {
-            e.preventDefault();
-            // Use registered user's name for reviews. Require sign-in if not present.
-            const cur = getCurrentUser();
-            if (!cur) {
-                alert('Iltimos, sharh qoldirish uchun tizimga kiring yoki hisob yarating.');
-                showSignIn();
-                openAuth();
-                return;
-            }
-            const name = cur.name || cur.phone || 'Foydalanuvchi';
-            const rating = parseInt(reviewRating.value, 10) || 5;
-            const text = reviewText.value.trim();
-            if (!text) {
-                alert('Iltimos, qisqacha fikringizni yozing.');
-                return;
-            }
-
-            const entry = { name, rating, text, ts: Date.now() };
-
-            // Send to moderation via Telegram bot API
-            try {
-                // We'll call the local bot API endpoint (main.py)
-                // In a production environment, this would be your server URL
-                const response = await fetch('http://localhost:10000/api', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'new_review',
-                        review: entry
-                    })
-                });
-
-                if (response.ok) {
-                    alert('✅ Rahmat! Sharhingiz yuborildi va moderator tasdig\'idan so\'ng saytda paydo bo\'ladi.');
-                    reviewForm.reset();
-                } else {
-                    // Fallback to local storage if API is not available
-                    reviews.push(entry);
-                    localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
-                    reviewForm.reset();
-                    renderReviews();
-                    alert('Sharh saqlandi (lokal).');
-                }
-            } catch (err) {
-                console.error('Moderation API error:', err);
-                // Fallback
+                // Fallback to local storage if API is not available
                 reviews.push(entry);
                 localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
                 reviewForm.reset();
                 renderReviews();
+                alert('Sharh saqlandi (lokal).');
             }
-        })
-    }
+        } catch (err) {
+            console.error('Moderation API error:', err);
+            // Fallback
+            reviews.push(entry);
+            localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
+            reviewForm.reset();
+            renderReviews();
+        }
+    })
+}
 
-    // --- Phone Number Input Formatting ---
-    function setupPhoneInput(inputId) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
+// --- Phone Number Input Formatting ---
+function setupPhoneInput(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
 
-        input.placeholder = '+998XXXXXXXXX';
+    input.placeholder = '+998XXXXXXXXX';
 
-        input.addEventListener('input', (e) => {
-            let value = e.target.value;
-            // Only allow + and digits
-            value = value.replace(/[^\d+]/g, '');
+    input.addEventListener('input', (e) => {
+        let value = e.target.value;
+        // Only allow + and digits
+        value = value.replace(/[^\d+]/g, '');
 
-            // Ensure starts with +998
-            if (value.length > 0 && !value.startsWith('+')) {
-                value = '+' + value;
-            }
-            if (value.length >= 4 && !value.startsWith('+998')) {
-                value = '+998' + value.replace(/^\+?/, '').replace(/^998/, '');
-            }
+        // Ensure starts with +998
+        if (value.length > 0 && !value.startsWith('+')) {
+            value = '+' + value;
+        }
+        if (value.length >= 4 && !value.startsWith('+998')) {
+            value = '+998' + value.replace(/^\+?/, '').replace(/^998/, '');
+        }
 
-            // Max length +998 + 9 digits = 13 chars
-            if (value.length > 13) {
-                value = value.slice(0, 13);
-            }
+        // Max length +998 + 9 digits = 13 chars
+        if (value.length > 13) {
+            value = value.slice(0, 13);
+        }
 
-            e.target.value = value;
-        });
+        e.target.value = value;
+    });
 
-        input.addEventListener('focus', (e) => {
-            if (!e.target.value) {
-                e.target.value = '+998';
-            }
-        });
+    input.addEventListener('focus', (e) => {
+        if (!e.target.value) {
+            e.target.value = '+998';
+        }
+    });
 
-        input.addEventListener('blur', (e) => {
-            if (e.target.value === '+998') {
-                e.target.value = '';
-            }
-        });
-    }
+    input.addEventListener('blur', (e) => {
+        if (e.target.value === '+998') {
+            e.target.value = '';
+        }
+    });
+}
 
-    setupPhoneInput('customerPhone');
-    setupPhoneInput('suPhone');
-    setupPhoneInput('siPhone');
+setupPhoneInput('customerPhone');
+setupPhoneInput('suPhone');
+setupPhoneInput('siPhone');
 
 });
