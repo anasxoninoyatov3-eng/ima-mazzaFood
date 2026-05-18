@@ -15,35 +15,35 @@ ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
 ADMIN_CHAT_ID = 8283401187 
 
 # --- SMS GATEWAY CONFIG ---
-SMS_API_URL = "https://api.example.com/send" # Placeholder for Antigravity API
-SMS_API_TOKEN = "" # Placeholder for actual token
+SMS_API_KEY = "b84499890e0e572ffb6a7fb0952aee0d1d73254806bb183b"
 
 async def send_sms_api(phone, otp):
     """
-    Real SMS sending logic via Antigravity API
+    Real SMS sending logic via smsmobileapi.com API
     """
+    import aiohttp
+    import urllib.parse
+
     text = f"Ideal Taxi: Tasdiqlash kodi - {otp}"
     # Remove any non-numeric characters from the phone number
     clean_phone = ''.join(filter(str.isdigit, phone))
     
-    payload = {
-        "phone": clean_phone,
-        "text": text
-    }
+    encoded_text = urllib.parse.quote(text)
+    url = f"https://api.smsmobileapi.com/sendsms/?recipients={clean_phone}&message={encoded_text}&apikey={SMS_API_KEY}"
     
-    logging.info(f"Sending SMS payload: {json.dumps(payload)}")
+    logging.info(f"Sending real SMS to {clean_phone}")
     
-    # Example API call (Placeholder):
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.post(SMS_API_URL, json=payload, headers={"Authorization": f"Bearer {SMS_API_TOKEN}"}) as resp:
-    #         if resp.status == 200: return True
-    
-    # For now, we also duplicate the message to Telegram admin so you can see it.
     try:
-        await admin_bot.send_message(ADMIN_CHAT_ID, f"📱 *SMS имитация для {clean_phone}:*\n{text}", parse_mode='Markdown')
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                resp_text = await resp.text()
+                logging.info(f"SMS API response: {resp_text}")
+                
+        # Send confirmation to Telegram admin as well
+        await admin_bot.send_message(ADMIN_CHAT_ID, f"📱 *SMS mijozning telefoniga yuborildi ({clean_phone}):*\n{text}\n\nJavob: {resp_text}", parse_mode='Markdown')
         return True
     except Exception as e:
-        logging.error(f"Failed to send SMS notification to Admin: {e}")
+        logging.error(f"Failed to send SMS: {e}")
         return False
 
 bot = Bot(token=TOKEN)
