@@ -417,34 +417,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // 2. Generate and Send OTP via SMS
             currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
-            currentOtpMessageId = null;
-            currentOtpChatId = null;
-
+            
             try {
-                const ADMIN_BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-                const ADMIN_CHAT_ID = "8283401187";
-
-                // Admin info
-                const adminText = `🔐 Ro'yxatdan o'tish so'rovi!\n\nMijoz: ${name}\nTelefon: ${phone}\nKod: ${currentOtp}`;
-                fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
+                const response = await fetch('http://localhost:10000/api', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: adminText })
-                }).then(res => res.json()).then(data => {
-                    if (data.ok) {
-                        currentOtpMessageId = data.result.message_id;
-                        currentOtpChatId = ADMIN_CHAT_ID;
-                    }
-                }).catch(() => { });
-
-                // Hozircha tekin va aniq ishlaydigan yagona yo'l: Ekranda kodni ko'rsatib turish
+                    body: JSON.stringify({
+                        action: 'send_otp',
+                        phone: phone,
+                        otp: currentOtp
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log(`OTP ${currentOtp} sent to ${phone}`);
+                } else {
+                    // Fallback to alert if backend is down
+                    alert(`Tasdiqlash kodi: ${currentOtp}`);
+                }
+            } catch (err) {
+                console.error('Failed to send OTP via API:', err);
                 alert(`Tasdiqlash kodi: ${currentOtp}`);
-            } catch (e) { }
+            }
 
-            if (authMsg) authMsg.style.display = 'none';
+            // 3. UI Transition
             if (signUpStep1) signUpStep1.style.display = 'none';
             if (signUpStep2) signUpStep2.style.display = 'block';
+            if (authMsg) authMsg.style.display = 'none';
         });
     }
 

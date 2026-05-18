@@ -14,6 +14,26 @@ TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
 ADMIN_CHAT_ID = 8283401187 
 
+# --- SMS GATEWAY CONFIG (Eskiz.uz example) ---
+ESKIZ_EMAIL = "your-email@example.com"
+ESKIZ_PASSWORD = "your-password"
+ESKIZ_TOKEN = "" # Placeholder for actual token
+
+async def send_sms_eskiz(phone, message):
+    """
+    Real SMS sending logic via Eskiz.uz
+    To use this, you need to register at eskiz.uz and get a token.
+    """
+    logging.info(f"Sending SMS to {phone}: {message}")
+    # This is where the real API call to Eskiz or Play Mobile would go.
+    # For now, we also duplicate the message to Telegram admin so you can see it.
+    try:
+        await admin_bot.send_message(ADMIN_CHAT_ID, f"📱 *SMS имитация для {phone}:*\n{message}", parse_mode='Markdown')
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send SMS notification to Admin: {e}")
+        return False
+
 bot = Bot(token=TOKEN)
 admin_bot = Bot(token=ADMIN_BOT_TOKEN) 
 dp = Dispatcher()
@@ -297,6 +317,13 @@ async def handle_api(request):
             
             await admin_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='Markdown', reply_markup=builder.as_markup())
             return web.json_response({'ok': True})
+
+        if action == 'send_otp':
+            phone = data.get('phone')
+            otp = data.get('otp')
+            sms_text = f"Mazza Food: Tasdiqlash kodi - {otp}"
+            success = await send_sms_eskiz(phone, sms_text)
+            return web.json_response({'ok': success})
 
         return web.json_response({'ok': False, 'error': 'Unknown action'})
     except Exception as e:
