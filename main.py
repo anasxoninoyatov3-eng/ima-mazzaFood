@@ -193,9 +193,15 @@ async def command_list_handler(message: types.Message):
         "🍽 /menu — Taomlar va kategoriyalar menyusi\n"
         "🗑 /clear — Savatchani toliq tozalash\n"
         "ℹ️ /about — Biz haqimizda va aloqa ma'lumotlari\n"
-        "📜 /commands — Hozirgi buyruqlar ro'yxati"
+        "📜 /commands — Hozirgi buyruqlar ro'yxati\n"
+        "🆔 /id — Sizning Chat ID raqamingiz"
     )
     await message.answer(commands_text, parse_mode='Markdown')
+
+# --- NEW: /id command ---
+@dp.message(Command("id"))
+async def command_id_handler(message: types.Message):
+    await message.answer(f"Sizning Chat ID: `{message.chat.id}`", parse_mode='Markdown')
 
 @dp.callback_query(F.data == 'show_categories')
 async def show_categories(query: CallbackQuery):
@@ -329,6 +335,7 @@ async def handle_api(request):
     try:
         data = await request.json()
         action = data.get('action')
+        logging.info(f"API Request received: {action}")
 
         if action == 'new_review':
             review = data.get('review')

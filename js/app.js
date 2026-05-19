@@ -1025,7 +1025,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fikrlarni mahalliy backend orqali yuborish (CORS xatoligini oldini olish uchun)
     async function sendReviewToTelegram(entry) {
         try {
-            const resp = await fetch('/api', { // Agar server boshqa portda bo'lsa, to'liq URL yozing, masalan http://localhost:10000/api
+            console.log('Sending review to backend...', entry);
+            const resp = await fetch('/api', { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1034,9 +1035,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             const data = await resp.json();
+            console.log('Backend response:', data);
             return data.ok;
         } catch (err) {
             console.error('API error:', err);
+            alert('⚠️ Backend bilan bog\'lanib bo\'lmadi. Main.py ishlayotganini va portlar to\'g\'riligini tekshiring. Xato: ' + err.message);
             return false;
         }
     }
