@@ -1022,31 +1022,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
-    // Telegram orqali review yuborish (bot inline tugmalar bilan)
+    // Fikrlarni mahalliy backend orqali yuborish (CORS xatoligini oldini olish uchun)
     async function sendReviewToTelegram(entry) {
-        const ts = entry.ts;
-        const starHtml = '⭐'.repeat(entry.rating);
-        const text = `📝 Yangi sharh (Moderatsiya)\n\n👤 Mijoz: ${entry.name}\n${starHtml} Baho: ${entry.rating}/5\n💬 Matn: ${entry.text}\n🕒 Vaqt: ${new Date(ts).toLocaleString('uz-UZ')}`;
-
-        const keyboard = {
-            inline_keyboard: [[
-                { text: '✅ Qoldirish', callback_data: `rev_approve_${ts}` },
-                { text: '❌ O\'chirish', callback_data: `rev_delete_${ts}` }
-            ]]
-        };
-
-        const url = `https://api.telegram.org/bot${REVIEW_BOT_TOKEN}/sendMessage`;
-        const resp = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: REVIEW_ADMIN_CHAT,
-                text: text,
-                reply_markup: keyboard
-            })
-        });
-        const data = await resp.json();
-        return data.ok;
+        try {
+            const resp = await fetch('/api', { // Agar server boshqa portda bo'lsa, to'liq URL yozing, masalan http://localhost:10000/api
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'new_review',
+                    review: entry
+                })
+            });
+            const data = await resp.json();
+            return data.ok;
+        } catch (err) {
+            console.error('API error:', err);
+            return false;
+        }
     }
 
     if (reviewForm) {
