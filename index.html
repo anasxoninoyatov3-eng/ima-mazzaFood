@@ -486,6 +486,51 @@
         <!-- Moved inside main -->
     </section>
 
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true"
+        aria-labelledby="profileTitle">
+        <div class="modal-panel" style="max-width:520px">
+            <header class="modal-header">
+                <h3 id="profileTitle" style="display:flex;align-items:center;gap:10px">
+                    <span id="profileTitleIcon">👤</span>
+                    <span id="profileTitleName">Profil</span>
+                </h3>
+                <button id="closeProfile" class="btn icon" aria-label="Close profile">✕</button>
+            </header>
+            <div class="modal-body" style="padding:20px">
+                <!-- User info -->
+                <div id="profileInfo"
+                    style="background:#f8fafc;border-radius:14px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:14px">
+                    <div
+                        style="width:52px;height:52px;background:linear-gradient(135deg,#ff6b35,#f59e0b);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">
+                        👤</div>
+                    <div>
+                        <div id="profileName" style="font-weight:700;font-size:1.1rem;color:#1a1a1a"></div>
+                        <div id="profilePhone" style="color:#6b6b6b;font-size:0.9rem;margin-top:2px"></div>
+                        <div id="profileRole" style="margin-top:4px"></div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div style="display:flex;gap:8px;margin-bottom:16px" id="profileTabs">
+                    <button id="tabMyReviews" class="profile-tab active-tab"
+                        style="flex:1;padding:9px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:0.9rem;background:#ff6b35;color:#fff;transition:all 0.2s">
+                        📝 Fikrlarim
+                    </button>
+                    <button id="tabSignOut" class="profile-tab"
+                        style="flex:1;padding:9px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:0.9rem;background:#f3f4f6;color:#374151;transition:all 0.2s">
+                        🚪 Chiqish
+                    </button>
+                </div>
+
+                <!-- My Reviews History -->
+                <div id="myReviewsContainer" style="max-height:360px;overflow-y:auto">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Cart Modal -->
     <div id="cartModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cartTitle">
         <div class="modal-panel">

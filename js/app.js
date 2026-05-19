@@ -60,7 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let cart = {};
     let accountTotal = parseInt(localStorage.getItem('mazza_account_total') || '0', 10) || 0;
 
-    let reviews = JSON.parse(localStorage.getItem('mazza_reviews') || '[]');
+    // Faqat admin tasdiqlagan fikrlar ko'rinadi
+    let reviews = JSON.parse(localStorage.getItem('mazza_approved_reviews') || '[]');
+    // Barcha pending fikrlar (foydalanuvchi o'z tarixi uchun)
+    let allReviews = JSON.parse(localStorage.getItem('mazza_all_reviews') || '[]');
+
+    // Admin bot token va chat id (review moderation uchun)
+    const REVIEW_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc';
+    const REVIEW_ADMIN_CHAT = '5377787513';
 
     // Currency suffix detection (default empty, will detect "so'm" if menu uses som)
     let currencySuffix = '';
@@ -361,21 +368,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // clicking account opens auth modal (or account view)
+    // ── Profile Modal ────────────────────────────────────────────────────────
+    const profileModal    = document.getElementById('profileModal');
+    const closeProfileBtn = document.getElementById('closeProfile');
+    const profileNameEl   = document.getElementById('profileName');
+    const profilePhoneEl  = document.getElementById('profilePhone');
+    const profileRoleEl   = document.getElementById('profileRole');
+    const profileTitleName= document.getElementById('profileTitleName');
+    const myReviewsCont   = document.getElementById('myReviewsContainer');
+    const tabMyReviewsBtn = document.getElementById('tabMyReviews');
+    const tabSignOutBtn   = document.getElementById('tabSignOut');
+
+    function openProfileModal() {
+        const u = getCurrentUser();
+        if (!u) { showSignIn(); openAuth(); return; }
+
+        // Fill profile info
+        if (profileNameEl)  profileNameEl.textContent  = u.name || u.phone;
+        if (profilePhoneEl) profilePhoneEl.textContent = u.phone || '';
+        if (profileTitleName) profileTitleName.textContent = u.name ? u.name.split(' ')[0] : 'Profil';
+        if (profileRoleEl) {
+            profileRoleEl.innerHTML = u.role === 'admin'
+                ? '<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:700">🛡 Admin</span>'
+                : '<span style="background:#d1fae5;color:#059669;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:700">✅ Foydalanuvchi</span>';
+        }
+
+        // Show my reviews by default
+        if (myReviewsCont) renderMyReviews(myReviewsCont);
+
+        if (profileModal) {
+            profileModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeProfileModalFn() {
+        if (profileModal) profileModal.setAttribute('aria-hidden', 'true');
+        if (!isAnyModalOpen()) document.body.style.overflow = '';
+    }
+
+    if (closeProfileBtn) closeProfileBtn.addEventListener('click', closeProfileModalFn);
+    if (profileModal) profileModal.addEventListener('click', e => { if (e.target === profileModal) closeProfileModalFn(); });
+
+    if (tabMyReviewsBtn) {
+        tabMyReviewsBtn.addEventListener('click', () => {
+            if (myReviewsCont) renderMyReviews(myReviewsCont);
+            tabMyReviewsBtn.style.background = '#ff6b35';
+            tabMyReviewsBtn.style.color = '#fff';
+            if (tabSignOutBtn) { tabSignOutBtn.style.background = '#f3f4f6'; tabSignOutBtn.style.color = '#374151'; }
+        });
+    }
+
+    if (tabSignOutBtn) {
+        tabSignOutBtn.addEventListener('click', () => {
+            if (!confirm('Hisobdan chiqmoqchimisiz?')) return;
+            localStorage.removeItem('mazza_current_user');
+            renderAuthState();
+            closeProfileModalFn();
+            // Admin panelini yashirish
+            const adminPanel = document.getElementById('adminReviewPanel');
+            if (adminPanel) adminPanel.remove();
+        });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // clicking account opens profile modal (if logged in) or auth modal
     if (accountBtn) {
         accountBtn.addEventListener('click', () => {
             const u = getCurrentUser();
             if (u) {
-                // open auth modal showing sign in tab but with logout option
-                showSignIn(); openAuth();
-                if (authMsg) { authMsg.style.display = 'block'; authMsg.style.color = '#2ecc71'; authMsg.textContent = `Tizimga kirdingiz: ${u.name} — chiqish uchun pastdagi tugmani bosing.`; }
-                // create sign out button if not exists
-                if (!document.getElementById('signOutBtn')) {
-                    const btn = document.createElement('button'); btn.id = 'signOutBtn'; btn.className = 'btn'; btn.textContent = 'Chiqish'; btn.style.marginTop = '12px';
-                    btn.addEventListener('click', () => { localStorage.removeItem('mazza_current_user'); renderAuthState(); closeAuthFn(); });
-                    document.querySelector('#authModal .modal-body').appendChild(btn);
-                }
-            } else { showSignIn(); openAuth(); }
+                openProfileModal();
+            } else {
+                showSignIn();
+                openAuth();
+            }
         });
     }
 
@@ -428,6 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 await registerUser(name, phone, pw);
                 renderAuthState();
                 closeAuthFn();
+                renderAdminReviewPanel();
+                renderReviews();
                 if (document.getElementById('suName')) document.getElementById('suName').value = '';
                 if (document.getElementById('suPhone')) document.getElementById('suPhone').value = '';
                 if (document.getElementById('suPassword')) document.getElementById('suPassword').value = '';
@@ -459,6 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
             await loginUser(phone, pw);
             renderAuthState();
             closeAuthFn();
+            renderAdminReviewPanel();
+            renderReviews();
             alert('Muvaffaqiyatli tizimga kirildi.');
         } catch (err) {
             if (authMsg) { authMsg.style.display = 'block'; authMsg.textContent = err.message || String(err); }
@@ -815,7 +885,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const yearEl = document.getElementById('year');
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-    // Render existing reviews
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Render tasdiqlangan fikrlar
     function renderReviews() {
         if (!reviewsList) return;
         reviewsList.innerHTML = '';
@@ -830,34 +904,100 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentUser = getCurrentUser();
             let deleteBtnHtml = '';
             if (currentUser && currentUser.role === 'admin') {
-                deleteBtnHtml = `<button class="review-delete" data-ts="${r.ts}" aria-label="Delete review">O'chirish</button>`;
+                deleteBtnHtml = `<button class="review-delete" data-ts="${r.ts}" aria-label="Delete review"
+                    style="background:#fee2e2;color:#ef4444;border:none;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:0.8rem;">🗑 O'chirish</button>`;
             }
 
-            li.innerHTML = `<div class="review-meta"><strong>${escapeHtml(r.name)}</strong> — ${r.rating} ⭐ • <small>${new Date(r.ts).toLocaleString()}</small> ${deleteBtnHtml}</div><div class="review-body">${escapeHtml(r.text)}</div>`;
+            const starHtml = '⭐'.repeat(r.rating);
+            li.innerHTML = `
+                <div class="review-meta">
+                    <strong>${escapeHtml(r.name)}</strong>
+                    <span style="color:#f59e0b">${starHtml}</span>
+                    <small style="color:#9ca3af;margin-left:auto">${new Date(r.ts).toLocaleString('uz-UZ')}</small>
+                    ${deleteBtnHtml}
+                </div>
+                <div class="review-body">${escapeHtml(r.text)}</div>`;
             reviewsList.appendChild(li);
-        })
+        });
     }
 
-    // Delete review via delegation
+    // Admin o'chirish (local) — delegation orqali
     reviewsList.addEventListener('click', e => {
         if (e.target && e.target.classList.contains('review-delete')) {
             const currentUser = getCurrentUser();
             if (currentUser && currentUser.role === 'admin') {
+                if (!confirm('Bu sharhni o\'chirishni tasdiqlaysizmi?')) return;
                 const ts = Number(e.target.dataset.ts);
                 reviews = reviews.filter(r => r.ts !== ts);
-                localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
+                localStorage.setItem('mazza_approved_reviews', JSON.stringify(reviews));
+                // All reviews dan ham status yangilash
+                allReviews = allReviews.map(r => r.ts === ts ? { ...r, status: 'deleted' } : r);
+                localStorage.setItem('mazza_all_reviews', JSON.stringify(allReviews));
                 renderReviews();
             } else {
                 alert('Sizda bu sharhni o\'chirish huquqi yo\'q!');
             }
         }
-    })
+    });
 
-    function escapeHtml(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Shaxsiy fikrlar tarixini profilda ko'rsatish
+    function renderMyReviews(containerEl) {
+        if (!containerEl) return;
+        const currentUser = getCurrentUser();
+        if (!currentUser) { containerEl.innerHTML = '<p style="color:#9ca3af">Kirish talab etiladi.</p>'; return; }
+
+        const myHistory = allReviews.filter(r => r.userId === currentUser.id);
+        if (myHistory.length === 0) {
+            containerEl.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px">Hali hech qanday fikr yozmagansiz.</p>';
+            return;
+        }
+        containerEl.innerHTML = '';
+        myHistory.slice().reverse().forEach(r => {
+            const statusMap = {
+                'pending':  { label: 'Moderatsiyada ⏳', color: '#f59e0b', bg: '#fef3c7' },
+                'approved': { label: 'Tasdiqlandi ✅',  color: '#10b981', bg: '#d1fae5' },
+                'deleted':  { label: 'O\'chirildi ❌',   color: '#ef4444', bg: '#fee2e2' }
+            };
+            const status = statusMap[r.status] || statusMap['pending'];
+            const starHtml = '⭐'.repeat(r.rating);
+            const div = document.createElement('div');
+            div.style.cssText = 'background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid #f3f4f6;';
+            div.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="color:#f59e0b">${starHtml}</span>
+                    <span style="background:${status.bg};color:${status.color};padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:600">${status.label}</span>
+                </div>
+                <div style="color:#374151;margin-bottom:6px">${escapeHtml(r.text)}</div>
+                <small style="color:#9ca3af">${new Date(r.ts).toLocaleString('uz-UZ')}</small>`;
+            containerEl.appendChild(div);
+        });
     }
 
     renderReviews();
+
+    // Sahifa yuklanganida admin panelini ko'rsatish
+    renderAdminReviewPanel();
+
+    // Server dan tasdiqlangan fikrlarni olish (agar backend ishlayotgan bo'lsa)
+    (async function syncServerReviews() {
+        try {
+            const resp = await fetch('https://mazza-food.uz/api/reviews', { signal: AbortSignal.timeout(3000) });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (data.ok && Array.isArray(data.reviews)) {
+                // Server dan kelgan tasdiqlangan fikrlarni localStorage bilan birlashtirish
+                const serverReviews = data.reviews;
+                const localTs = new Set(reviews.map(r => r.ts));
+                serverReviews.forEach(r => {
+                    if (!localTs.has(r.ts)) reviews.push(r);
+                });
+                localStorage.setItem('mazza_approved_reviews', JSON.stringify(reviews));
+                renderReviews();
+            }
+        } catch (e) {
+            // Server ishlamayapti — local dan foydalanish
+        }
+    })();
 
     // Hero text entrance: add .animate class on load so heading, paragraph and CTA fade/slide in
     (function heroEntrance() {
@@ -882,10 +1022,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
+    // Telegram orqali review yuborish (bot inline tugmalar bilan)
+    async function sendReviewToTelegram(entry) {
+        const ts = entry.ts;
+        const starHtml = '⭐'.repeat(entry.rating);
+        const text = `📝 Yangi sharh (Moderatsiya)\n\n👤 Mijoz: ${entry.name}\n${starHtml} Baho: ${entry.rating}/5\n💬 Matn: ${entry.text}\n🕒 Vaqt: ${new Date(ts).toLocaleString('uz-UZ')}`;
+
+        const keyboard = {
+            inline_keyboard: [[
+                { text: '✅ Qoldirish', callback_data: `rev_approve_${ts}` },
+                { text: '❌ O\'chirish', callback_data: `rev_delete_${ts}` }
+            ]]
+        };
+
+        const url = `https://api.telegram.org/bot${REVIEW_BOT_TOKEN}/sendMessage`;
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: REVIEW_ADMIN_CHAT,
+                text: text,
+                reply_markup: keyboard
+            })
+        });
+        const data = await resp.json();
+        return data.ok;
+    }
+
     if (reviewForm) {
         reviewForm.addEventListener('submit', async e => {
             e.preventDefault();
-            // Use registered user's name for reviews. Require sign-in if not present.
             const cur = getCurrentUser();
             if (!cur) {
                 alert('Iltimos, sharh qoldirish uchun tizimga kiring yoki hisob yarating.');
@@ -901,41 +1067,102 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const entry = { name, rating, text, ts: Date.now() };
+            const submitBtn = reviewForm.querySelector('button[type="submit"]');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Yuborilmoqda...'; }
 
-            // Send to moderation via Telegram bot API
+            const entry = { name, rating, text, ts: Date.now(), userId: cur.id, status: 'pending' };
+
+            // Barcha foydalanuvchi fikrlarini saqlash (tarixi uchun)
+            allReviews.push(entry);
+            localStorage.setItem('mazza_all_reviews', JSON.stringify(allReviews));
+
             try {
-                // We'll call the local bot API endpoint (main.py)
-                // In a production environment, this would be your server URL
-                const response = await fetch('http://localhost:10000/api', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'new_review',
-                        review: entry
-                    })
-                });
-
-                if (response.ok) {
-                    alert('✅ Rahmat! Sharhingiz yuborildi va moderator tasdig\'idan so\'ng saytda paydo bo\'ladi.');
-                    reviewForm.reset();
+                const ok = await sendReviewToTelegram(entry);
+                if (ok) {
+                    alert('✅ Rahmat! Sharhingiz adminга yuborildi. Tasdiqlangandan so\'ng saytda ko\'rinadi.');
                 } else {
-                    // Fallback to local storage if API is not available
-                    reviews.push(entry);
-                    localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
-                    reviewForm.reset();
-                    renderReviews();
-                    alert('Sharh saqlandi (lokal).');
+                    alert('⚠️ Yuborishda xatolik. Sharh saqlab qolindi — admin keyinroq ko\'radi.');
                 }
             } catch (err) {
-                console.error('Moderation API error:', err);
-                // Fallback
-                reviews.push(entry);
-                localStorage.setItem('mazza_reviews', JSON.stringify(reviews));
+                console.error('Telegram review error:', err);
+                alert('⚠️ Internet xatoligi. Sharh lokal saqland.');
+            } finally {
                 reviewForm.reset();
-                renderReviews();
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Fikrni yuborish'; }
             }
-        })
+        });
+    }
+
+    // Telegram Webhook uchun: bot dan callback ni veb sayt orqali qaytarish
+    // Bu funksiya Telegram bot webhook da ishlaydi (main.py da handle qilinadi)
+    // Lekin biz websocket / polling o'rniga localStorage sync qilamiz.
+    // Admin sayt orqali kirganida fikrlarni tasdiqlashi uchun admin panel:
+    function renderAdminReviewPanel() {
+        const cur = getCurrentUser();
+        if (!cur || cur.role !== 'admin') return;
+
+        // Admin panel container yaratish
+        let panel = document.getElementById('adminReviewPanel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'adminReviewPanel';
+            panel.style.cssText = 'background:#1e293b;border-radius:16px;padding:20px;margin-top:20px;';
+            const reviewsSection = document.getElementById('reviews');
+            if (reviewsSection) reviewsSection.appendChild(panel);
+        }
+
+        const pending = allReviews.filter(r => r.status === 'pending');
+        if (pending.length === 0) {
+            panel.innerHTML = '<p style="color:#64748b;text-align:center">Moderatsiyada fikr yo\'q ✅</p>';
+            return;
+        }
+        panel.innerHTML = `<h4 style="color:#f1f5f9;margin:0 0 14px;font-size:1rem">🛡 Admin — Moderatsiya (${pending.length} ta)</h4>`;
+        pending.forEach(r => {
+            const starHtml = '⭐'.repeat(r.rating);
+            const div = document.createElement('div');
+            div.style.cssText = 'background:#334155;border-radius:12px;padding:14px;margin-bottom:10px;';
+            div.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
+                    <div>
+                        <strong style="color:#f1f5f9">${escapeHtml(r.name)}</strong>
+                        <span style="color:#f59e0b;margin-left:8px">${starHtml}</span>
+                        <small style="color:#64748b;display:block;margin-top:2px">${new Date(r.ts).toLocaleString('uz-UZ')}</small>
+                    </div>
+                </div>
+                <p style="color:#cbd5e1;margin:0 0 12px">${escapeHtml(r.text)}</p>
+                <div style="display:flex;gap:8px">
+                    <button class="admin-approve" data-ts="${r.ts}"
+                        style="flex:1;background:#10b981;color:#fff;border:none;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600">✅ Qoldirish</button>
+                    <button class="admin-delete" data-ts="${r.ts}"
+                        style="flex:1;background:#ef4444;color:#fff;border:none;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600">❌ O'chirish</button>
+                </div>`;
+            panel.appendChild(div);
+        });
+
+        // Action handlers
+        panel.querySelectorAll('.admin-approve').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ts = Number(btn.dataset.ts);
+                const review = allReviews.find(r => r.ts === ts);
+                if (!review) return;
+                // Tasdiqlash
+                review.status = 'approved';
+                reviews.push({ ...review });
+                localStorage.setItem('mazza_approved_reviews', JSON.stringify(reviews));
+                localStorage.setItem('mazza_all_reviews', JSON.stringify(allReviews));
+                renderReviews();
+                renderAdminReviewPanel();
+            });
+        });
+
+        panel.querySelectorAll('.admin-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ts = Number(btn.dataset.ts);
+                allReviews = allReviews.map(r => r.ts === ts ? { ...r, status: 'deleted' } : r);
+                localStorage.setItem('mazza_all_reviews', JSON.stringify(allReviews));
+                renderAdminReviewPanel();
+            });
+        });
     }
 
     // --- Phone Number Input Formatting ---

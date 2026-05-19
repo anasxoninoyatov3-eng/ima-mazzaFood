@@ -439,9 +439,16 @@ html {
     transform: scale(1.02);
 }
 
-/* Features */
+/* Features — faqat mobile (≤ 768px) da ko'rinadi */
 .features {
     padding: 40px 0;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .features {
+        display: block;
+    }
 }
 
 .features-grid {

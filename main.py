@@ -12,7 +12,7 @@ from aiohttp import web
 
 TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
-ADMIN_CHAT_ID = 5377787513 
+ADMIN_CHAT_ID = 8283401187 
 
 # --- SMS GATEWAY CONFIG ---
 SMS_API_KEY = "b84499890e0e572ffb6a7fb0952aee0d1d73254806bb183b"
@@ -114,8 +114,8 @@ def get_session(chat_id: int):
 
 def get_start_menu():
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text='📜 Menyu (Taomlar)', callback_data='show_categories'))
-    builder.row(InlineKeyboardButton(text="🌐 Saytga o'tish", web_app=types.WebAppInfo(url='https://mazzafood.netlify.app/')))
+    builder.row(InlineKeyboardButton(text='📜 Menyu (Taomlar)', callback_data='show_ca  tegories'))
+    builder.row(InlineKeyboardButton(text="🌐 Saytga o'tish", web_app=types.WebAppInfo(url='https://mazza-food.uz/')))
     return builder.as_markup()
 
 def get_categories_menu():
@@ -277,6 +277,9 @@ async def finish_order(query: CallbackQuery):
     session['cart'] = {}
     await query.answer()
 
+# Temporary storage for pending reviews (to retrieve content on callback)
+pending_reviews = {}
+
 # --- REVIEW MODERATION HANDLERS ---
 @dp.callback_query(F.data.startswith('rev_'))
 async def moderate_review(query: CallbackQuery):
@@ -286,23 +289,29 @@ async def moderate_review(query: CallbackQuery):
 
     parts = query.data.split('_')
     action = parts[1] # 'approve' or 'delete'
-    review_id = parts[2]
+    ts = parts[2]
 
-    # In a real app, we would update the status in a database.
-    # Here we'll just acknowledge the action for the admin.
-    
     if action == 'approve':
-        await query.message.edit_caption(
-            caption=query.message.caption + "\n\n✅ *Tasdiqlandi!* Sharh saytda paydo bo'ladi.",
-            parse_mode='Markdown',
-            reply_markup=None
-        )
+        review = pending_reviews.get(ts)
+        if review:
+            reviews_list = load_reviews()
+            # Check if not already added
+            if not any(r.get('ts') == review['ts'] for r in reviews_list):
+                reviews_list.append(review)
+                save_reviews(reviews_list)
+            
+            await query.message.edit_text(
+                text=query.message.text + "\n\n✅ *Tasdiqlandi!* Sharh saytda paydo bo'ldi.",
+                parse_mode='Markdown'
+            )
+            del pending_reviews[ts]
         await query.answer("Sharh tasdiqlandi!")
     else:
-        await query.message.edit_caption(
-            caption=query.message.caption + "\n\n❌ *O'chirildi!*",
-            parse_mode='Markdown',
-            reply_markup=None
+        if ts in pending_reviews:
+            del pending_reviews[ts]
+        await query.message.edit_text(
+            text=query.message.text + "\n\n❌ *O'chirildi!*",
+            parse_mode='Markdown'
         )
         await query.answer("Sharh o'chirildi!")
 
@@ -323,6 +332,10 @@ async def handle_api(request):
 
         if action == 'new_review':
             review = data.get('review')
+            # Save to pending storage
+            ts_str = str(review['ts'])
+            pending_reviews[ts_str] = review
+
             # Notify Admin
             text = (
                 f"📝 *Yangi sharh (Moderatsiya)!*\n\n"
@@ -333,12 +346,16 @@ async def handle_api(request):
             
             builder = InlineKeyboardBuilder()
             builder.row(
-                InlineKeyboardButton(text="✅ Qoldirish", callback_data=f"rev_approve_{review['ts']}"),
-                InlineKeyboardButton(text="❌ O'chirish", callback_data=f"rev_delete_{review['ts']}")
+                InlineKeyboardButton(text="✅ Qoldirish", callback_data=f"rev_approve_{ts_str}"),
+                InlineKeyboardButton(text="❌ O'chirish", callback_data=f"rev_delete_{ts_str}")
             )
             
             await admin_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='Markdown', reply_markup=builder.as_markup())
             return web.json_response({'ok': True}, headers=headers)
+
+        if action == 'get_reviews':
+            reviews_list = load_reviews()
+            return web.json_response({'ok': True, 'reviews': reviews_list}, headers=headers)
 
         if (action == 'submit_order'):
             order = data.get('order')
