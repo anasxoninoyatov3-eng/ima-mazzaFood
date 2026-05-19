@@ -24,6 +24,8 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('MazzaFood V7 loaded');
+
     if (!localStorage.getItem('mazza_clean_users_v2')) {
         localStorage.removeItem('mazza_users');
         localStorage.removeItem('mazza_current_user');
@@ -369,22 +371,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Profile Modal ────────────────────────────────────────────────────────
-    const profileModal    = document.getElementById('profileModal');
+    const profileModal = document.getElementById('profileModal');
     const closeProfileBtn = document.getElementById('closeProfile');
-    const profileNameEl   = document.getElementById('profileName');
-    const profilePhoneEl  = document.getElementById('profilePhone');
-    const profileRoleEl   = document.getElementById('profileRole');
-    const profileTitleName= document.getElementById('profileTitleName');
-    const myReviewsCont   = document.getElementById('myReviewsContainer');
+    const profileNameEl = document.getElementById('profileName');
+    const profilePhoneEl = document.getElementById('profilePhone');
+    const profileRoleEl = document.getElementById('profileRole');
+    const profileTitleName = document.getElementById('profileTitleName');
+    const myReviewsCont = document.getElementById('myReviewsContainer');
     const tabMyReviewsBtn = document.getElementById('tabMyReviews');
-    const tabSignOutBtn   = document.getElementById('tabSignOut');
+    const tabSignOutBtn = document.getElementById('tabSignOut');
 
     function openProfileModal() {
         const u = getCurrentUser();
         if (!u) { showSignIn(); openAuth(); return; }
 
         // Fill profile info
-        if (profileNameEl)  profileNameEl.textContent  = u.name || u.phone;
+        if (profileNameEl) profileNameEl.textContent = u.name || u.phone;
         if (profilePhoneEl) profilePhoneEl.textContent = u.phone || '';
         if (profileTitleName) profileTitleName.textContent = u.name ? u.name.split(' ')[0] : 'Profil';
         if (profileRoleEl) {
@@ -954,9 +956,9 @@ document.addEventListener('DOMContentLoaded', () => {
         containerEl.innerHTML = '';
         myHistory.slice().reverse().forEach(r => {
             const statusMap = {
-                'pending':  { label: 'Moderatsiyada ⏳', color: '#f59e0b', bg: '#fef3c7' },
-                'approved': { label: 'Tasdiqlandi ✅',  color: '#10b981', bg: '#d1fae5' },
-                'deleted':  { label: 'O\'chirildi ❌',   color: '#ef4444', bg: '#fee2e2' }
+                'pending': { label: 'Moderatsiyada ⏳', color: '#f59e0b', bg: '#fef3c7' },
+                'approved': { label: 'Tasdiqlandi ✅', color: '#10b981', bg: '#d1fae5' },
+                'deleted': { label: 'O\'chirildi ❌', color: '#ef4444', bg: '#fee2e2' }
             };
             const status = statusMap[r.status] || statusMap['pending'];
             const starHtml = '⭐'.repeat(r.rating);
@@ -1026,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendReviewToTelegram(entry) {
         try {
             console.log('Sending review to backend...', entry);
-            const resp = await fetch('/api', { 
+            const resp = await fetch('/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1047,6 +1049,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reviewForm) {
         reviewForm.addEventListener('submit', async e => {
             e.preventDefault();
+            console.log('Submit clicked');
+            // alert('Yuborish jarayoni boshlandi...'); 
+
             const cur = getCurrentUser();
             if (!cur) {
                 alert('Iltimos, sharh qoldirish uchun tizimga kiring yoki hisob yarating.');

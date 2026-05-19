@@ -297,9 +297,9 @@ html {
     gap: 8px;
 }
 
-/* Always show burger on wider screens too and align sizes */
+/* Always show burger on wider screens too and align sizes (REMOVED) */
 .burger-btn {
-    display: inline-flex !important;
+    display: none;
 }
 
 .brand-icon {
@@ -313,7 +313,6 @@ html {
 
 .burger-btn {
     display: none;
-    /* visible on smaller screens via media query */
     background: #fff;
     border: 1px solid #eee;
     padding: 8px;
@@ -321,7 +320,6 @@ html {
     height: 44px;
     border-radius: 10px;
     cursor: pointer;
-    display: inline-flex;
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-sm);
@@ -655,7 +653,8 @@ html {
 
     /* show burger, hide desktop nav */
     .burger-btn {
-        display: block;
+        display: inline-flex;
+        order: 1;
     }
 
     .nav {
