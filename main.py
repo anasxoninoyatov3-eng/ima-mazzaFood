@@ -9,6 +9,12 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiohttp import web
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
@@ -174,7 +180,7 @@ async def command_about_handler(message: types.Message):
     about_text = (
         "🍕 *PIZZA & KFC & FAST FOOD*\n\n"
         "🍕 *PIZZA буюртма берсангиз етказиб бериш хизмати бепул!!!*\n\n"
-        "📍 *Манзил:* Пўстиндўз кўчаси (Спортивные) нон маркази билан ён маён\n\n"
+        "📍 *Манзил:* Пўстиндўз кўчаси (Спортивные) нон маркази билан ён маён\n\n "
         "💳 *CLICK*\n"
         "`5614 6822 1326 5467` \n"
         "*Xatamkulov Xabibjon*\n\n"

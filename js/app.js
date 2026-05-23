@@ -123,34 +123,255 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.querySelectorAll('.add-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-            const id = btn.dataset.id;
-            const name = btn.dataset.name;
-            // check for a size select inside the same card (for pizzas)
-            const card = btn.closest('.card');
-            const sizeSel = card ? card.querySelector('.size-select') : null;
-            let price = parseFloat(btn.dataset.price) || 0;
+    // ── Item Details & Ingredients Logic ──────────────────────────────────────────
+    const itemDetailsModal = document.getElementById('itemDetailsModal');
+    const closeItemDetailsBtn = document.getElementById('closeItemDetailsBtn');
+    const itemDetailsImage = document.getElementById('itemDetailsImage');
+    const itemDetailsTitle = document.getElementById('itemDetailsTitle');
+    const itemDetailsDesc = document.getElementById('itemDetailsDesc');
+    const itemDetailsSizeContainer = document.getElementById('itemDetailsSizeContainer');
+    const itemDetailsSizeSelect = document.getElementById('itemDetailsSizeSelect');
+    const itemDetailsIngredientsContainer = document.getElementById('itemDetailsIngredientsContainer');
+    const itemDetailsIngredientsList = document.getElementById('itemDetailsIngredientsList');
+    const itemDetailsTotal = document.getElementById('itemDetailsTotal');
+    const itemDetailsAddToCartBtn = document.getElementById('itemDetailsAddToCartBtn');
+
+    const ingredientsMap = {
+        'b': [ // Sharik
+            { name: "Ketchup", price: 2000 },
+            { name: "Mayonez", price: 2000 },
+            { name: "Pishloq sousi", price: 3000 }
+        ],
+        'f': [ // Fri
+            { name: "Ketchup", price: 2000 },
+            { name: "Mayonez", price: 2000 },
+            { name: "Pishloq sousi", price: 3000 }
+        ],
+        'sn': [ // Snacks/Fri
+            { name: "Ketchup", price: 2000 },
+            { name: "Mayonez", price: 2000 },
+            { name: "Pishloq sousi", price: 3000 }
+        ],
+        'lv': [ // Lavash
+            { name: "Pishloq", price: 4000 },
+            { name: "Halapeno", price: 3000 },
+            { name: "Fribux", price: 4000 },
+            { name: "Qo'shimcha go'sht", price: 8000 }
+        ],
+        'sh': [ // Shaurma
+            { name: "Pishloq", price: 4000 },
+            { name: "Halapeno", price: 3000 },
+            { name: "Fribux", price: 4000 },
+            { name: "Qo'shimcha go'sht", price: 8000 }
+        ],
+        'bg': [ // Burger
+            { name: "Pishloq", price: 4000 },
+            { name: "Halapeno", price: 3000 },
+            { name: "Qo'shimcha kotlet", price: 12000 },
+            { name: "Xashbraun", price: 5000 }
+        ],
+        'tw': [ // Twister & KFC
+            { name: "Pishloq sousi", price: 3000 },
+            { name: "Qo'shimcha tovuq", price: 8000 }
+        ],
+        'sd': [ // Sandvich & Donar
+            { name: "Pishloq", price: 4000 },
+            { name: "Halapeno", price: 3000 }
+        ],
+        'hd': [ // Hotdog
+            { name: "Pishloq", price: 3000 },
+            { name: "Halapeno", price: 2000 },
+            { name: "Qo'shimcha sosiska", price: 5000 }
+        ]
+    };
+
+    let currentItemData = null;
+
+    function formatNumber(num) {
+        return num.toLocaleString();
+    }
+
+    function calculateCurrentItemTotal() {
+        if (!currentItemData) return 0;
+        let basePrice = currentItemData.basePrice;
+        if (itemDetailsSizeSelect && itemDetailsSizeSelect.style.display !== 'none' && itemDetailsSizeSelect.options.length > 0) {
+            basePrice = parseFloat(itemDetailsSizeSelect.options[itemDetailsSizeSelect.selectedIndex].value) || basePrice;
+        }
+
+        let ingredientsTotal = 0;
+        const checkboxes = itemDetailsIngredientsList.querySelectorAll('input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => {
+            ingredientsTotal += parseFloat(cb.value) || 0;
+        });
+
+        return basePrice + ingredientsTotal;
+    }
+
+    function updateItemDetailsTotal() {
+        const total = calculateCurrentItemTotal();
+        if (itemDetailsTotal) {
+            itemDetailsTotal.textContent = formatPrice(total);
+        }
+    }
+
+    if (itemDetailsSizeSelect) {
+        itemDetailsSizeSelect.addEventListener('change', updateItemDetailsTotal);
+    }
+
+    function openItemDetailsModal(card) {
+        const titleEl = card.querySelector('.card-title');
+        const descEl = card.querySelector('.desc');
+        const imgEl = card.querySelector('.card-media img');
+        const btn = card.querySelector('.add-btn');
+        const originalSizeSel = card.querySelector('.size-select');
+        
+        if (!btn || !itemDetailsModal) return;
+
+        const baseTitle = titleEl ? titleEl.textContent : '';
+        const baseDesc = descEl ? descEl.textContent : '';
+        const imgSrc = imgEl ? imgEl.src : '';
+        
+        currentItemData = {
+            id: btn.dataset.id,
+            name: btn.dataset.name || baseTitle,
+            basePrice: parseFloat(btn.dataset.price) || 0
+        };
+
+        if (itemDetailsImage) itemDetailsImage.src = imgSrc;
+        if (itemDetailsTitle) itemDetailsTitle.textContent = baseTitle;
+        if (itemDetailsDesc) itemDetailsDesc.textContent = baseDesc;
+
+        // Size logic
+        if (originalSizeSel) {
+            itemDetailsSizeContainer.style.display = 'block';
+            itemDetailsSizeSelect.innerHTML = originalSizeSel.innerHTML;
+            itemDetailsSizeSelect.style.display = 'block';
+            // Copy selected index
+            itemDetailsSizeSelect.selectedIndex = originalSizeSel.selectedIndex;
+        } else {
+            itemDetailsSizeContainer.style.display = 'none';
+            itemDetailsSizeSelect.innerHTML = '';
+        }
+
+        // Ingredients logic
+        itemDetailsIngredientsList.innerHTML = '';
+        
+        // Find prefix
+        let prefixMatch = currentItemData.id.match(/^([a-z]+)/);
+        let prefix = prefixMatch ? prefixMatch[1] : '';
+        let ingredients = ingredientsMap[prefix] || [];
+
+        if (ingredients.length > 0) {
+            itemDetailsIngredientsContainer.style.display = 'block';
+            ingredients.forEach((ing, index) => {
+                const id = `ing_${prefix}_${index}`;
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                div.style.background = '#f9fafb';
+                div.style.padding = '8px 12px';
+                div.style.borderRadius = '8px';
+                
+                div.innerHTML = `
+                    <label for="${id}" style="display:flex; align-items:center; gap:10px; cursor:pointer; width:100%; margin:0;">
+                        <input type="checkbox" id="${id}" value="${ing.price}" data-name="${ing.name}" style="width:18px; height:18px;">
+                        <span>${ing.name}</span>
+                        <span style="margin-left:auto; color:#ea580c; font-weight:600;">+${formatNumber(ing.price)} so'm</span>
+                    </label>
+                `;
+                
+                const cb = div.querySelector('input');
+                cb.addEventListener('change', updateItemDetailsTotal);
+                
+                itemDetailsIngredientsList.appendChild(div);
+            });
+        } else {
+            itemDetailsIngredientsContainer.style.display = 'none';
+        }
+
+        updateItemDetailsTotal();
+
+        itemDetailsModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeItemDetailsModalFn() {
+        if (itemDetailsModal) {
+            itemDetailsModal.setAttribute('aria-hidden', 'true');
+        }
+        if (!isAnyModalOpen()) document.body.style.overflow = '';
+    }
+
+    if (closeItemDetailsBtn) closeItemDetailsBtn.addEventListener('click', closeItemDetailsModalFn);
+    if (itemDetailsModal) {
+        itemDetailsModal.addEventListener('click', (e) => {
+            if (e.target === itemDetailsModal) closeItemDetailsModalFn();
+        });
+    }
+
+    if (itemDetailsAddToCartBtn) {
+        itemDetailsAddToCartBtn.addEventListener('click', () => {
+            if (!currentItemData) return;
+
+            let finalPrice = currentItemData.basePrice;
             let sizeLabel = '';
-            let key = id;
-            if (sizeSel) {
-                const opt = sizeSel.options[sizeSel.selectedIndex];
-                const val = parseFloat(opt.value) || price;
-                price = val;
+            
+            if (itemDetailsSizeSelect && itemDetailsSizeSelect.options.length > 0) {
+                const opt = itemDetailsSizeSelect.options[itemDetailsSizeSelect.selectedIndex];
+                finalPrice = parseFloat(opt.value) || finalPrice;
                 sizeLabel = opt.dataset.label || opt.text || '';
-                // make cart key unique per size so different sizes stack separately
-                key = `${id}__${sizeLabel.replace(/\s+/g, '')}`;
             }
 
-            const displayName = sizeLabel ? `${name} (${sizeLabel})` : name;
-            if (!cart[key]) cart[key] = { id: key, name: displayName, price, qty: 0 };
+            let ingredientsStr = '';
+            let ingredientsPrice = 0;
+            const selectedIngredients = [];
+            
+            const checkboxes = itemDetailsIngredientsList.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => {
+                ingredientsPrice += parseFloat(cb.value) || 0;
+                selectedIngredients.push(cb.dataset.name);
+            });
+            
+            if (selectedIngredients.length > 0) {
+                ingredientsStr = ` (+${selectedIngredients.join(', ')})`;
+            }
+
+            finalPrice += ingredientsPrice;
+
+            const displayName = sizeLabel ? `${currentItemData.name} (${sizeLabel})${ingredientsStr}` : `${currentItemData.name}${ingredientsStr}`;
+            
+            // Unique key combining ID, size, and sorted ingredients to stack perfectly identical combinations
+            let keySuffix = sizeLabel.replace(/\s+/g, '');
+            if (selectedIngredients.length > 0) {
+                keySuffix += '__' + selectedIngredients.sort().map(s => s.replace(/\s+/g, '')).join('_');
+            }
+            const key = keySuffix ? `${currentItemData.id}__${keySuffix}` : currentItemData.id;
+
+            if (!cart[key]) {
+                cart[key] = { id: key, name: displayName, price: finalPrice, qty: 0 };
+            }
             cart[key].qty += 1;
             accountTotal += 1;
             localStorage.setItem('mazza_account_total', String(accountTotal));
+            
             updateCartUI();
+            closeItemDetailsModalFn();
             openCart();
-        })
-    })
+        });
+    }
+
+    // Bind original card clicks to the new modal
+    document.querySelectorAll('.card').forEach(card => {
+        const btn = card.querySelector('.add-btn');
+        const media = card.querySelector('.card-media');
+        
+        if (btn) btn.addEventListener('click', () => openItemDetailsModal(card));
+        if (media) {
+            media.style.cursor = 'pointer';
+            media.addEventListener('click', () => openItemDetailsModal(card));
+        }
+    });
 
     cartList.addEventListener('click', e => {
         if (e.target && e.target.classList.contains('remove')) {
@@ -830,7 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send order directly to Telegram API (works from Netlify static hosting)
     async function sendOrderToBackend(order) {
         const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
-        const CHAT_ID = "5377787513";
+        const CHAT_ID = "8283401187";
 
         // Build plain text message (no HTML/Markdown to avoid parse errors)
         let text = '📦 Yangi buyurtma!\n\n';

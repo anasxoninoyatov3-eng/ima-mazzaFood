@@ -228,7 +228,7 @@
                         <h3 class="card-title">Sharik</h3>
                         <p class="price">18000 som</p>
                         <p class="desc">Sharik — mazali ta'm bilan to'ldirilgan fastfood.</p>
-                        <button class="btn add-btn" data-id="b6" data-name="Sharik" data-price="18000">Add</button>
+                        <button class="btn add-btn" data-id="b6" data-name="Sharik" data-price="18000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -245,7 +245,7 @@
                             <option value="18000" data-label="Derevenskiy">Derevenskiy — 18 000 so'm</option>
                         </select>
                         <p class="desc">Oltin kartoshka mukammallik bilan pishirilgan.</p>
-                        <button class="btn add-btn" data-id="f1" data-name="Fri" data-price="18000">Add</button>
+                        <button class="btn add-btn" data-id="f1" data-name="Fri" data-price="18000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -266,7 +266,7 @@
                             <option value="38000" data-label="Halapeno">Halapeno — 38 000 so'm</option>
                         </select>
                         <p class="desc">Klassik lavash — mol go'shti, bodring va pomidor bilan.</p>
-                        <button class="btn add-btn" data-id="lv1" data-name="Lavash" data-price="35000">Add</button>
+                        <button class="btn add-btn" data-id="lv1" data-name="Lavash" data-price="35000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -285,7 +285,7 @@
                         </select>
                         <p class="desc">Tandirda pishirilgan qarsildoq lavash.</p>
                         <button class="btn add-btn" data-id="lv2" data-name="Tandir Lavash"
-                            data-price="40000">Add</button>
+                            data-price="40000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -304,7 +304,7 @@
                             <option value="35000" data-label="Halapeno">Halapeno — 35 000 so'm</option>
                         </select>
                         <p class="desc">Yangi sabzavotlar va go'shtli shaurma.</p>
-                        <button class="btn add-btn" data-id="sh1" data-name="Shaurma" data-price="35000">Add</button>
+                        <button class="btn add-btn" data-id="sh1" data-name="Shaurma" data-price="35000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -318,7 +318,7 @@
                         <p class="price">18000</p>
 
                         <p class="desc">Mazali kartoshka va pishloqli gazaklar.</p>
-                        <button class="btn add-btn" data-id="sn1" data-name="Fri" data-price="18000">Add</button>
+                        <button class="btn add-btn" data-id="sn1" data-name="Fri" data-price="18000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -348,7 +348,7 @@
                         </select>
                         <p class="desc">Suvli kotlet va yangi sabzavotlar bilan burgerlar.</p>
                         <button class="btn add-btn" data-id="bg1" data-name="Cheese Burger"
-                            data-price="35000">Add</button>
+                            data-price="35000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -370,7 +370,7 @@
                             <option value="25000" data-label="Kfc (1kg)">Kfc (1kg) — 25 000 so'm</option>
                         </select>
                         <p class="desc">Qarsildoq tovuqli twister va gazaklar.</p>
-                        <button class="btn add-btn" data-id="tw1" data-name="Twister" data-price="33000">Add</button>
+                        <button class="btn add-btn" data-id="tw1" data-name="Twister" data-price="33000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -389,7 +389,7 @@
                         </select>
                         <p class="desc">To'yimli sandvichlar va donar.</p>
                         <button class="btn add-btn" data-id="sd1" data-name="Tovuqli Sandvich"
-                            data-price="50000">Add</button>
+                            data-price="50000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -409,7 +409,7 @@
                         </select>
                         <p class="desc">Issiq va mazali hot-doglar.</p>
                         <button class="btn add-btn" data-id="hd1" data-name="Kanada Hot Dog"
-                            data-price="12000">Add</button>
+                            data-price="12000">Qo'shish</button>
                     </div>
                 </article>
             </div>
@@ -600,6 +600,40 @@
             </div>
         </div>
     </div>
+    <!-- Item Details Modal -->
+    <div id="itemDetailsModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="itemDetailsTitle">
+        <div class="modal-panel" style="max-width: 500px; padding: 0; overflow: hidden;">
+            <div style="position: relative;">
+                <img id="itemDetailsImage" src="" alt="Taom" style="width: 100%; height: 250px; object-fit: cover;">
+                <button id="closeItemDetailsBtn" class="btn icon" aria-label="Close" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8);"><i class="fa-solid fa-x"></i></button>
+            </div>
+            <div style="padding: 20px;">
+                <h3 id="itemDetailsTitle" style="margin-bottom: 8px;">Taom Nomi</h3>
+                <p id="itemDetailsDesc" style="color: #666; font-size: 0.95rem; margin-bottom: 16px;">Taom tavsifi...</p>
+                
+                <div id="itemDetailsSizeContainer" style="margin-bottom: 16px; display: none;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Hajmi / Turi</label>
+                    <select id="itemDetailsSizeSelect" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;"></select>
+                </div>
+
+                <div id="itemDetailsIngredientsContainer" style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px; font-size: 1.05rem;">Qo'shimchalar</h4>
+                    <div id="itemDetailsIngredientsList" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Ingredients appended here -->
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 16px;">
+                    <div>
+                        <span style="display: block; font-size: 0.85rem; color: #888;">Jami:</span>
+                        <strong id="itemDetailsTotal" style="font-size: 1.3rem; color: #333;">0 so'm</strong>
+                    </div>
+                    <button id="itemDetailsAddToCartBtn" class="btn primary" style="padding: 12px 24px;">Savatchaga qo'shish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="js/app.js?v=7"></script>
 </body>
 
