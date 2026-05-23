@@ -16,7 +16,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-TOKEN = '8574329398:AAEbVdblZpI83Lv3EvLX8EbcRq2Pf8r976c'
+TOKEN = '8837925727:AAEqjE0Wpy9I1EyJg2LJrMhpPFUizKKczos'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
 ADMIN_CHAT_ID = 8283401187 
 
