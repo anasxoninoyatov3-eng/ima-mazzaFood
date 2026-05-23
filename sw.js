@@ -1,9 +1,9 @@
-const CACHE_NAME = 'mazza-food-v6';
+const CACHE_NAME = 'mazza-food-v7';
 const ASSETS = [
   '/',
   '/index.html',
   '/css/style.css',
-  '/js/app.js?v=6',
+  '/js/app.js?v=7',
   '/manifest.json',
   'https://cdn-icons-png.flaticon.com/512/3075/3075929.png'
 ];
