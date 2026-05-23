@@ -9,7 +9,8 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiohttp import web
-import logging
+import urllib.parse
+from datetime import datetime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,33 +20,20 @@ logging.basicConfig(
 TOKEN = '8837925727:AAEqjE0Wpy9I1EyJg2LJrMhpPFUizKKczos'
 ADMIN_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc'
 ADMIN_CHAT_ID = 8283401187 
-
-# --- SMS GATEWAY CONFIG ---
 SMS_API_KEY = "b84499890e0e572ffb6a7fb0952aee0d1d73254806bb183b"
 
 async def send_sms_api(phone, otp):
-    """
-    Real SMS sending logic via smsmobileapi.com API
-    """
     import aiohttp
-    import urllib.parse
-
     text = f"Ideal Taxi: Tasdiqlash kodi - {otp}"
-    # Remove any non-numeric characters from the phone number
     clean_phone = ''.join(filter(str.isdigit, phone))
-    
     encoded_text = urllib.parse.quote(text)
     url = f"https://api.smsmobileapi.com/sendsms/?recipients={clean_phone}&message={encoded_text}&apikey={SMS_API_KEY}"
-    
     logging.info(f"Sending real SMS to {clean_phone}")
-    
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 resp_text = await resp.text()
                 logging.info(f"SMS API response: {resp_text}")
-                
-        # Send confirmation to Telegram admin as well
         await admin_bot.send_message(ADMIN_CHAT_ID, f"📱 *SMS mijozning telefoniga yuborildi ({clean_phone}):*\n{text}\n\nJavob: {resp_text}", parse_mode='Markdown')
         return True
     except Exception as e:
@@ -56,7 +44,6 @@ bot = Bot(token=TOKEN)
 admin_bot = Bot(token=ADMIN_BOT_TOKEN) 
 dp = Dispatcher()
 
-# Database simulation for reviews
 REVIEWS_FILE = 'reviews.json'
 if not os.path.exists(REVIEWS_FILE):
     with open(REVIEWS_FILE, 'w') as f:
@@ -120,7 +107,7 @@ def get_session(chat_id: int):
 
 def get_start_menu():
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text='📜 Menyu (Taomlar)', callback_data='show_ca  tegories'))
+    builder.row(InlineKeyboardButton(text='📜 Menyu (Taomlar)', callback_data='show_categories'))
     builder.row(InlineKeyboardButton(text="🌐 Saytga o'tish", web_app=types.WebAppInfo(url='https://mazza-food.uz/')))
     return builder.as_markup()
 
@@ -148,30 +135,19 @@ async def command_menu_handler(message: types.Message):
 
 @dp.message(Command("clear"))
 async def command_clear_handler(message: types.Message):
-    # --- НОВАЯ ЛОГИКА ПОЛНОЙ ОЧИСТКИ ЧАТА ---
-    # Получаем ID текущего сообщения как точку отсчета
     current_msg_id = message.message_id
     chat_id = message.chat.id
-    
-    # Удаляем сообщения в цикле (назад на 100 сообщений)
     for msg_id in range(current_msg_id, current_msg_id - 100, -1):
         try:
             await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except Exception:
-            # Пропускаем, если сообщение старое (>48ч) или уже удалено
             continue
-    
-    # Отправляем финальное уведомление
     status_msg = await message.answer("🧹 Chat muvaffaqiyatli tozalandi!")
-    
-    # Ждем 3-4 секунды и удаляем само уведомление
     await asyncio.sleep(3.5)
     try:
         await bot.delete_message(chat_id=chat_id, message_id=status_msg.message_id)
     except Exception:
         pass
-
-    # Очищаем также сессию корзины
     session = get_session(chat_id)
     session['cart'] = {}
 
@@ -190,7 +166,6 @@ async def command_about_handler(message: types.Message):
     )
     await message.answer(about_text, parse_mode='Markdown')
 
-# --- НОВАЯ КОМАНДА /commands ---
 @dp.message(Command("commands"))
 async def command_list_handler(message: types.Message):
     commands_text = (
@@ -204,7 +179,6 @@ async def command_list_handler(message: types.Message):
     )
     await message.answer(commands_text, parse_mode='Markdown')
 
-# --- NEW: /id command ---
 @dp.message(Command("id"))
 async def command_id_handler(message: types.Message):
     await message.answer(f"Sizning Chat ID: `{message.chat.id}`", parse_mode='Markdown')
@@ -270,48 +244,38 @@ async def finish_order(query: CallbackQuery):
     chat_id = query.message.chat.id
     session = get_session(chat_id)
     session['payment'] = query.data.replace('pay_', '')
-    
     order_text = "🚨 *Yangi Buyurtma!*\n\n"
     total = 0
     for p_id, item in session['cart'].items():
         order_text += f"- {item['name']} x {item['count']} = {item['price'] * item['count']} so'm\n"
         total += item['price'] * item['count']
-    
     order_text += f"\n*Jami:* {total} so'm\n*Usul:* {session['type']}\n*To'lov:* {session['payment']}\n"
     order_text += f"*Xaridor:* {query.from_user.full_name} (@{query.from_user.username})"
-
     try:
         await admin_bot.send_message(ADMIN_CHAT_ID, order_text, parse_mode='Markdown')
     except Exception as e:
         logging.error(f"Xabar yuborishda xato: {e}")
-
     await query.message.edit_text("✅ Buyurtma qabul qilindi! Rahmat.", reply_markup=None)
     session['cart'] = {}
     await query.answer()
 
-# Temporary storage for pending reviews (to retrieve content on callback)
 pending_reviews = {}
 
-# --- REVIEW MODERATION HANDLERS ---
 @dp.callback_query(F.data.startswith('rev_'))
 async def moderate_review(query: CallbackQuery):
     if query.from_user.id != ADMIN_CHAT_ID:
         await query.answer("Siz admin emassiz!", show_alert=True)
         return
-
     parts = query.data.split('_')
-    action = parts[1] # 'approve' or 'delete'
+    action = parts[1]
     ts = parts[2]
-
     if action == 'approve':
         review = pending_reviews.get(ts)
         if review:
             reviews_list = load_reviews()
-            # Check if not already added
             if not any(r.get('ts') == review['ts'] for r in reviews_list):
                 reviews_list.append(review)
                 save_reviews(reviews_list)
-            
             await query.message.edit_text(
                 text=query.message.text + "\n\n✅ *Tasdiqlandi!* Sharh saytda paydo bo'ldi.",
                 parse_mode='Markdown'
@@ -328,81 +292,58 @@ async def moderate_review(query: CallbackQuery):
         await query.answer("Sharh o'chirildi!")
 
 async def handle_api(request):
-    # CORS Headers for local development
     headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
     }
-    
     if request.method == 'OPTIONS':
         return web.Response(headers=headers)
-
     try:
         data = await request.json()
         action = data.get('action')
         logging.info(f"API Request received: {action}")
-
         if action == 'new_review':
             review = data.get('review')
-            # Save to pending storage
             ts_str = str(review['ts'])
             pending_reviews[ts_str] = review
-
-            # Notify Admin
             text = (
                 f"📝 *Yangi sharh (Moderatsiya)!*\n\n"
                 f"👤 Mijoz: *{review['name']}*\n"
                 f"⭐ Baho: {review['rating']} / 5\n"
                 f"💬 Matn: {review['text']}\n"
             )
-            
             builder = InlineKeyboardBuilder()
             builder.row(
                 InlineKeyboardButton(text="✅ Qoldirish", callback_data=f"rev_approve_{ts_str}"),
                 InlineKeyboardButton(text="❌ O'chirish", callback_data=f"rev_delete_{ts_str}")
             )
-            
             await admin_bot.send_message(ADMIN_CHAT_ID, text, parse_mode='Markdown', reply_markup=builder.as_markup())
             return web.json_response({'ok': True}, headers=headers)
-
         if action == 'get_reviews':
             reviews_list = load_reviews()
             return web.json_response({'ok': True, 'reviews': reviews_list}, headers=headers)
-
-        if (action == 'submit_order'):
+        if action == 'submit_order':
             order = data.get('order')
-            
-            # Format message
             text = "📦 <b>Yangi buyurtma!</b>\n\n"
             text += f"""👤 Mijoz: <b>{order.get('name', "Noma'lum")}</b>\n"""
-            text += f"📞 Telefon: <code>{order.get('phone', 'Noma\'lum')}</code>\n"
-            text += f"📍 Manzil: {order.get('address', '-')}\n\n"
-            
+            text += f"""📞 Telefon: <code>{order.get('phone', "Noma'lum")}</code>\n"""
+            text += f"📍 Manzil: {order.get('address',还原'-')}\n\n"
             text += "🛒 <b>Buyurtma tarkibi:</b>\n"
             items = order.get('items', {})
             for key in items:
                 it = items[key]
                 text += f"▫️ {it['name']} × {it['qty']} = {it['price'] * it['qty']:,} so'm\n"
-            
             delivery = order.get('delivery', {})
             d_method = "Olib ketish" if delivery.get('method') == 'pickup' else (delivery.get('method', 'standard'))
             text += f"\n🚚 Yetkazib berish: <b>{d_method}</b>"
             if delivery.get('fee'):
                 text += f" ({delivery['fee']:,} so'm)"
-            
             payment = "💳 Click / Payme" if order.get('payment') == 'click' else "💵 Naqd"
             text += f"\n💳 To'lov turi: <b>{payment}</b>"
             text += f"\n\n💰 <b>Jami: {order.get('total', 0):,} so'm</b>"
-            
-            # Time format
-            from datetime import datetime
             dt = datetime.fromtimestamp(order.get('ts', 0) / 1000)
             text += f"\n🕒 Vaqt: {dt.strftime('%d.%m.%Y, %H:%M:%S')}"
-
-            # Use the specified Admin Bot
-            # Important: Since we are using an external Admin Bot (Kokand Mazza Food Bot), 
-            # we must ensure the bot session is handled correctly.
             from aiogram import Bot
             order_bot = Bot(token=ADMIN_BOT_TOKEN)
             try:
@@ -413,9 +354,7 @@ async def handle_api(request):
                 raise e
             finally:
                 await order_bot.session.close()
-
             return web.json_response({'ok': True}, headers=headers)
-
         return web.json_response({'ok': False, 'error': 'Unknown action'}, headers=headers)
     except Exception as e:
         logging.error(f"API Error: {e}")
@@ -424,20 +363,23 @@ async def handle_api(request):
 async def handle(request):
     return web.Response(text="Bot is running smoothly on Web Service mode!")
 
-async def start_web_server():
+async def make_app():
     app = web.Application()
     app.router.add_get('/', handle)
     app.router.add_post('/api', handle_api)
+    return app
+
+async def main():
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    app = await make_app()
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-
-async def main():
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.create_task(start_web_server())
-    await dp.start_polling(bot)
+    await asyncio.gather(
+        site.start(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
