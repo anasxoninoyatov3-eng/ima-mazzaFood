@@ -375,7 +375,7 @@ async def handle_api(request):
             
             # Format message
             text = "📦 <b>Yangi buyurtma!</b>\n\n"
-            text += f"👤 Mijoz: <b>{order.get('name', 'Noma\'lum')}</b>\n"
+            text += f"""👤 Mijoz: <b>{order.get('name', "Noma'lum")}</b>\n"""
             text += f"📞 Telefon: <code>{order.get('phone', 'Noma\'lum')}</code>\n"
             text += f"📍 Manzil: {order.get('address', '-')}\n\n"
             
