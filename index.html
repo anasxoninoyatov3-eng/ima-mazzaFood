@@ -23,7 +23,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=9">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="css/social.css">
 </head>
@@ -266,7 +266,8 @@
                             <option value="38000" data-label="Halapeno">Halapeno — 38 000 so'm</option>
                         </select>
                         <p class="desc">Klassik lavash — mol go'shti, bodring va pomidor bilan.</p>
-                        <button class="btn add-btn" data-id="lv1" data-name="Lavash" data-price="35000">Qo'shish</button>
+                        <button class="btn add-btn" data-id="lv1" data-name="Lavash"
+                            data-price="35000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -304,7 +305,8 @@
                             <option value="35000" data-label="Halapeno">Halapeno — 35 000 so'm</option>
                         </select>
                         <p class="desc">Yangi sabzavotlar va go'shtli shaurma.</p>
-                        <button class="btn add-btn" data-id="sh1" data-name="Shaurma" data-price="35000">Qo'shish</button>
+                        <button class="btn add-btn" data-id="sh1" data-name="Shaurma"
+                            data-price="35000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -370,7 +372,8 @@
                             <option value="25000" data-label="Kfc (1kg)">Kfc (1kg) — 25 000 so'm</option>
                         </select>
                         <p class="desc">Qarsildoq tovuqli twister va gazaklar.</p>
-                        <button class="btn add-btn" data-id="tw1" data-name="Twister" data-price="33000">Qo'shish</button>
+                        <button class="btn add-btn" data-id="tw1" data-name="Twister"
+                            data-price="33000">Qo'shish</button>
                     </div>
                 </article>
 
@@ -601,40 +604,53 @@
         </div>
     </div>
     <!-- Item Details Modal -->
-    <div id="itemDetailsModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="itemDetailsTitle">
-        <div class="modal-panel" style="max-width: 500px; padding: 0; overflow: hidden;">
-            <div style="position: relative;">
-                <img id="itemDetailsImage" src="" alt="Taom" style="width: 100%; height: 250px; object-fit: cover;">
-                <button id="closeItemDetailsBtn" class="btn icon" aria-label="Close" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8);"><i class="fa-solid fa-x"></i></button>
+    <div id="itemDetailsModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true"
+        aria-labelledby="itemDetailsTitle">
+        <div class="modal-panel item-details-panel">
+            <!-- Close button -->
+            <button id="closeItemDetailsBtn" class="btn icon item-details-close" aria-label="Close"><i
+                    class="fa-solid fa-x"></i></button>
+
+            <!-- Scrollable content -->
+            <div class="item-details-scroll">
+                <!-- Image -->
+                <div class="item-details-image-wrap">
+                    <img id="itemDetailsImage" src="" alt="Taom" class="item-details-img">
+                </div>
+
+                <!-- Info -->
+                <div class="item-details-content">
+                    <h3 id="itemDetailsTitle" class="item-details-title">Taom Nomi</h3>
+                    <p id="itemDetailsDesc" class="item-details-desc">Taom tavsifi...</p>
+
+                    <div id="itemDetailsSizeContainer" class="item-details-size" style="display: none;">
+                        <label class="item-details-label">Hajmi / Turi</label>
+                        <select id="itemDetailsSizeSelect" class="item-details-select"></select>
+                    </div>
+
+                    <div id="itemDetailsIngredientsContainer" class="item-details-ingredients">
+                        <h4 class="item-details-ing-title">Tarkibi</h4>
+                        <div id="itemDetailsIngredientsList" class="item-details-ing-list">
+                            <!-- Ingredients appended here -->
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="padding: 20px;">
-                <h3 id="itemDetailsTitle" style="margin-bottom: 8px;">Taom Nomi</h3>
-                <p id="itemDetailsDesc" style="color: #666; font-size: 0.95rem; margin-bottom: 16px;">Taom tavsifi...</p>
-                
-                <div id="itemDetailsSizeContainer" style="margin-bottom: 16px; display: none;">
-                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Hajmi / Turi</label>
-                    <select id="itemDetailsSizeSelect" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;"></select>
-                </div>
 
-                <div id="itemDetailsIngredientsContainer" style="margin-bottom: 20px;">
-                    <h4 style="margin-bottom: 10px; font-size: 1.05rem;">Qo'shimchalar</h4>
-                    <div id="itemDetailsIngredientsList" style="display: flex; flex-direction: column; gap: 8px;">
-                        <!-- Ingredients appended here -->
-                    </div>
+            <!-- Sticky footer -->
+            <div class="item-details-footer">
+                <div class="item-details-total-wrap">
+                    <span class="item-details-total-label">Jami:</span>
+                    <strong id="itemDetailsTotal" class="item-details-total-price">0 so'm</strong>
                 </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 16px;">
-                    <div>
-                        <span style="display: block; font-size: 0.85rem; color: #888;">Jami:</span>
-                        <strong id="itemDetailsTotal" style="font-size: 1.3rem; color: #333;">0 so'm</strong>
-                    </div>
-                    <button id="itemDetailsAddToCartBtn" class="btn primary" style="padding: 12px 24px;">Savatchaga qo'shish</button>
-                </div>
+                <button id="itemDetailsAddToCartBtn" class="btn primary item-details-add-btn">
+                    <i class="fa-solid fa-cart-plus" style="margin-right: 8px;"></i>Savatchaga qo'shish
+                </button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="js/app.js?v=7"></script>
+    <script type="module" src="js/app.js?v=9"></script>
 </body>
 
 </html>

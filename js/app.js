@@ -136,53 +136,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemDetailsTotal = document.getElementById('itemDetailsTotal');
     const itemDetailsAddToCartBtn = document.getElementById('itemDetailsAddToCartBtn');
 
-    const ingredientsMap = {
-        'b': [ // Sharik
-            { name: "Ketchup", price: 2000 },
-            { name: "Mayonez", price: 2000 },
-            { name: "Pishloq sousi", price: 3000 }
-        ],
-        'f': [ // Fri
-            { name: "Ketchup", price: 2000 },
-            { name: "Mayonez", price: 2000 },
-            { name: "Pishloq sousi", price: 3000 }
-        ],
-        'sn': [ // Snacks/Fri
-            { name: "Ketchup", price: 2000 },
-            { name: "Mayonez", price: 2000 },
-            { name: "Pishloq sousi", price: 3000 }
-        ],
-        'lv': [ // Lavash
-            { name: "Pishloq", price: 4000 },
-            { name: "Halapeno", price: 3000 },
-            { name: "Fribux", price: 4000 },
-            { name: "Qo'shimcha go'sht", price: 8000 }
-        ],
-        'sh': [ // Shaurma
-            { name: "Pishloq", price: 4000 },
-            { name: "Halapeno", price: 3000 },
-            { name: "Fribux", price: 4000 },
-            { name: "Qo'shimcha go'sht", price: 8000 }
-        ],
-        'bg': [ // Burger
-            { name: "Pishloq", price: 4000 },
-            { name: "Halapeno", price: 3000 },
-            { name: "Qo'shimcha kotlet", price: 12000 },
-            { name: "Xashbraun", price: 5000 }
-        ],
-        'tw': [ // Twister & KFC
-            { name: "Pishloq sousi", price: 3000 },
-            { name: "Qo'shimcha tovuq", price: 8000 }
-        ],
-        'sd': [ // Sandvich & Donar
-            { name: "Pishloq", price: 4000 },
-            { name: "Halapeno", price: 3000 }
-        ],
-        'hd': [ // Hotdog
-            { name: "Pishloq", price: 3000 },
-            { name: "Halapeno", price: 2000 },
-            { name: "Qo'shimcha sosiska", price: 5000 }
-        ]
+    // Old ingredientsMap is removed
+
+    // Har bir burger turining tarkibi (nimadan iborat)
+    const tarkibiMap = {
+        'Cheese Burger': ['Non', 'Mol go\'shti kotleti', 'Pishloq', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Ketchup', 'Mayonez'],
+        'Mazza Burger': ['Non', 'Mol go\'shti kotleti', 'Pishloq', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Maxsus sous', 'Ketchup', 'Mayonez'],
+        'Halapeno Burger': ['Non', 'Mol go\'shti kotleti', 'Halapeno', 'Salat', 'Pomidor', 'Piyoz', 'Ketchup', 'Mayonez'],
+        'BBQ Burger': ['Non', 'Mol go\'shti kotleti', 'Salat', 'Pomidor', 'Piyoz', 'BBQ sous', 'Mayonez'],
+        'Twins Burger': ['Non', '2x Mol go\'shti kotleti', 'Pishloq', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Ketchup', 'Mayonez'],
+        'Mix Cheese': ['Non', 'Mol go\'shti kotleti', '2x Pishloq', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Pishloq sousi', 'Mayonez'],
+        'Double Burger': ['Non', '2x Mol go\'shti kotleti', 'Pishloq', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Ketchup', 'Mayonez'],
+        'Chikin Burger': ['Non', 'Tovuq filesi', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Ketchup', 'Mayonez'],
+        'Chicken Burger': ['Non', 'Tovuq filesi', 'Salat', 'Pomidor', 'Bodring', 'Piyoz', 'Ketchup', 'Mayonez'],
+        'KFC Burger': ['Non', 'Qarsildoq tovuq', 'Salat', 'Pomidor', 'Ketchup', 'Mayonez'],
+        'KFC Cheese': ['Non', 'Qarsildoq tovuq', 'Pishloq', 'Salat', 'Pomidor', 'Ketchup', 'Mayonez'],
+        'Kfc Chesee Burger': ['Non', 'Qarsildoq tovuq', 'Pishloq', 'Salat', 'Pomidor', 'Ketchup', 'Mayonez'],
+        'Chicken Mix': ['Non', 'Tovuq filesi', 'Qarsildoq tovuq', 'Salat', 'Pomidor', 'Ketchup', 'Mayonez']
     };
 
     let currentItemData = null;
@@ -194,14 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateCurrentItemTotal() {
         if (!currentItemData) return 0;
         let basePrice = currentItemData.basePrice;
-        if (itemDetailsSizeSelect && itemDetailsSizeSelect.style.display !== 'none' && itemDetailsSizeSelect.options.length > 0) {
+        if (itemDetailsSizeSelect && itemDetailsSizeContainer && itemDetailsSizeContainer.style.display !== 'none' && itemDetailsSizeSelect.options.length > 0) {
             basePrice = parseFloat(itemDetailsSizeSelect.options[itemDetailsSizeSelect.selectedIndex].value) || basePrice;
         }
 
         let ingredientsTotal = 0;
-        const checkboxes = itemDetailsIngredientsList.querySelectorAll('input[type="checkbox"]:checked');
-        checkboxes.forEach(cb => {
-            ingredientsTotal += parseFloat(cb.value) || 0;
+        const qtys = itemDetailsIngredientsList.querySelectorAll('.ing-qty');
+        qtys.forEach(span => {
+            const qty = parseInt(span.textContent) || 0;
+            ingredientsTotal += qty * (parseFloat(span.dataset.price) || 0);
         });
 
         return basePrice + ingredientsTotal;
@@ -253,41 +224,86 @@ document.addEventListener('DOMContentLoaded', () => {
             itemDetailsSizeSelect.innerHTML = '';
         }
 
-        // Ingredients logic
+        // Ingredients / Tarkibi logic
         itemDetailsIngredientsList.innerHTML = '';
         
         // Find prefix
         let prefixMatch = currentItemData.id.match(/^([a-z]+)/);
         let prefix = prefixMatch ? prefixMatch[1] : '';
-        let ingredients = ingredientsMap[prefix] || [];
 
-        if (ingredients.length > 0) {
-            itemDetailsIngredientsContainer.style.display = 'block';
-            ingredients.forEach((ing, index) => {
-                const id = `ing_${prefix}_${index}`;
+        itemDetailsIngredientsContainer.style.display = 'block';
+
+        const baseTarkibMap = {
+            'b': ['Ketchup', 'Mayonez', 'Pishloq sousi'],
+            'f': ['Kartoshka', 'Ketchup', 'Mayonez', 'Pishloq sousi'],
+            'sn': ['Qarsildoqlar', 'Ketchup', 'Mayonez', 'Pishloq sousi'],
+            'lv': ['Lavash xamir', 'Go\'sht', 'Pomidor', 'Bodring', 'Piyoz', 'Maxsus sous', 'Pishloq', 'Halapeno'],
+            'sh': ['Shaurma noni', 'Go\'sht', 'Pomidor', 'Bodring', 'Piyoz', 'Maxsus sous', 'Pishloq'],
+            'tw': ['Tortilla', 'Qarsildoq tovuq', 'Salat', 'Pomidor', 'Maxsus sous', 'Pishloq sousi'],
+            'sd': ['Maxsus non', 'Go\'sht/Tovuq', 'Pomidor', 'Bodring', 'Piyoz', 'Pishloq'],
+            'hd': ['Maxsus non', 'Sosiska', 'Ketchup', 'Mayonez', 'Xantal', 'Pishloq']
+        };
+
+        function renderTarkibi() {
+            itemDetailsIngredientsList.innerHTML = '';
+            let selectedLabel = '';
+            if (itemDetailsSizeSelect && itemDetailsSizeSelect.options.length > 0) {
+                const opt = itemDetailsSizeSelect.options[itemDetailsSizeSelect.selectedIndex];
+                selectedLabel = opt.dataset.label || opt.text || '';
+            }
+            
+            // Try to find specific burger tarkibi, or fallback to prefix base tarkibi
+            const tarkibList = (prefix === 'bg' && tarkibiMap[selectedLabel]) ? tarkibiMap[selectedLabel] : 
+                               (tarkibiMap[selectedLabel] || baseTarkibMap[prefix] || ['Maxsus tayyorlangan']);
+
+            tarkibList.forEach((ingName, index) => {
+                const id = `ing_${prefix}_${Math.random().toString(36).substring(7)}_${index}`;
                 const div = document.createElement('div');
-                div.style.display = 'flex';
-                div.style.justifyContent = 'space-between';
-                div.style.alignItems = 'center';
-                div.style.background = '#f9fafb';
-                div.style.padding = '8px 12px';
-                div.style.borderRadius = '8px';
-                
+                div.className = 'ing-item-add';
+                // Setup interactive UI with default qty = 1
                 div.innerHTML = `
-                    <label for="${id}" style="display:flex; align-items:center; gap:10px; cursor:pointer; width:100%; margin:0;">
-                        <input type="checkbox" id="${id}" value="${ing.price}" data-name="${ing.name}" style="width:18px; height:18px;">
-                        <span>${ing.name}</span>
-                        <span style="margin-left:auto; color:#ea580c; font-weight:600;">+${formatNumber(ing.price)} so'm</span>
-                    </label>
+                    <div class="ing-item-info">
+                        <span class="ing-item-name">${ingName}</span>
+                        <span class="ing-item-price ing-free-badge">Bepul</span>
+                    </div>
+                    <div class="ing-item-controls">
+                        <button type="button" class="ing-btn ing-btn-minus ing-minus" data-id="${id}">−</button>
+                        <span class="ing-qty-display ing-qty" id="qty_${id}" data-id="${id}" data-price="0" data-name="${ingName}">1</span>
+                        <button type="button" class="ing-btn ing-btn-plus ing-plus" data-id="${id}">+</button>
+                    </div>
                 `;
                 
-                const cb = div.querySelector('input');
-                cb.addEventListener('change', updateItemDetailsTotal);
+                const minusBtn = div.querySelector('.ing-minus');
+                const plusBtn = div.querySelector('.ing-plus');
+                const qtySpan = div.querySelector('.ing-qty');
+
+                minusBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    let q = parseInt(qtySpan.textContent);
+                    if (q > 0) {
+                        qtySpan.textContent = q - 1;
+                        if(q - 1 === 0) {
+                            div.style.opacity = '0.5';
+                        }
+                    }
+                });
+
+                plusBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    let q = parseInt(qtySpan.textContent);
+                    qtySpan.textContent = q + 1;
+                    div.style.opacity = '1';
+                });
                 
                 itemDetailsIngredientsList.appendChild(div);
             });
-        } else {
-            itemDetailsIngredientsContainer.style.display = 'none';
+            updateItemDetailsTotal();
+        }
+
+        renderTarkibi();
+
+        if (itemDetailsSizeSelect) {
+            itemDetailsSizeSelect.addEventListener('change', renderTarkibi);
         }
 
         updateItemDetailsTotal();
@@ -324,34 +340,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let ingredientsStr = '';
-            let ingredientsPrice = 0;
-            const selectedIngredients = [];
+            const selectedStrArray = [];
             
-            const checkboxes = itemDetailsIngredientsList.querySelectorAll('input[type="checkbox"]:checked');
-            checkboxes.forEach(cb => {
-                ingredientsPrice += parseFloat(cb.value) || 0;
-                selectedIngredients.push(cb.dataset.name);
+            const qtys = itemDetailsIngredientsList.querySelectorAll('.ing-qty');
+            qtys.forEach(span => {
+                const qty = parseInt(span.textContent) || 0;
+                const name = span.dataset.name;
+                
+                if (qty === 0) {
+                    selectedStrArray.push(`${name}siz`);
+                } else if (qty > 1) {
+                    selectedStrArray.push(`Qo'shimcha ${name.toLowerCase()}`);
+                }
             });
             
-            if (selectedIngredients.length > 0) {
-                ingredientsStr = ` (+${selectedIngredients.join(', ')})`;
+            if (selectedStrArray.length > 0) {
+                ingredientsStr = ` (${selectedStrArray.join(', ')})`;
             }
 
-            finalPrice += ingredientsPrice;
+            // Always free, no extra price from ingredients
+            finalPrice += 0;
 
             const displayName = sizeLabel ? `${currentItemData.name} (${sizeLabel})${ingredientsStr}` : `${currentItemData.name}${ingredientsStr}`;
             
-            // Unique key combining ID, size, and sorted ingredients to stack perfectly identical combinations
-            let keySuffix = sizeLabel.replace(/\s+/g, '');
-            if (selectedIngredients.length > 0) {
-                keySuffix += '__' + selectedIngredients.sort().map(s => s.replace(/\s+/g, '')).join('_');
-            }
-            const key = keySuffix ? `${currentItemData.id}__${keySuffix}` : currentItemData.id;
+            // Har bir qo'shilgan mahsulot alohida bo'ladi (unique timestamp key)
+            const key = `${currentItemData.id}__${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-            if (!cart[key]) {
-                cart[key] = { id: key, name: displayName, price: finalPrice, qty: 0 };
-            }
-            cart[key].qty += 1;
+            cart[key] = { id: key, name: displayName, price: finalPrice, qty: 1 };
             accountTotal += 1;
             localStorage.setItem('mazza_account_total', String(accountTotal));
             
@@ -1245,24 +1260,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
-    // Fikrlarni mahalliy backend orqali yuborish (CORS xatoligini oldini olish uchun)
+    // Fikrlarni TO'G'RIDAN-TO'G'RI Telegram API orqali yuborish (backend shart emas)
     async function sendReviewToTelegram(entry) {
+        const BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc';
+        const CHAT_ID = '8283401187';
+
+        const stars = '⭐'.repeat(entry.rating);
+        let text = '📝 Yangi sharh (Moderatsiya)!\n\n';
+        text += '👤 Mijoz: ' + (entry.name || 'Noma\'lum') + '\n';
+        text += '⭐ Baho: ' + stars + ' (' + entry.rating + '/5)\n';
+        text += '💬 Matn: ' + (entry.text || '-') + '\n';
+        text += '🕒 Vaqt: ' + new Date(entry.ts).toLocaleString('uz-UZ') + '\n';
+
+        const url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage';
+
         try {
-            console.log('Sending review to backend...', entry);
-            const resp = await fetch('/api', {
+            console.log('Sending review directly to Telegram...');
+            const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'new_review',
-                    review: entry
+                    chat_id: CHAT_ID,
+                    text: text
                 })
             });
             const data = await resp.json();
-            console.log('Backend response:', data);
-            return data.ok;
+            console.log('Telegram API response:', data);
+            if (!data.ok) {
+                console.error('Telegram API error:', data);
+            }
+            return !!data.ok;
         } catch (err) {
-            console.error('API error:', err);
-            alert('⚠️ Backend bilan bog\'lanib bo\'lmadi. Main.py ishlayotganini va portlar to\'g\'riligini tekshiring. Xato: ' + err.message);
+            console.error('Telegram fetch error:', err);
+            alert('⚠️ Telegram bilan bog\'lanib bo\'lmadi. Internet aloqasini tekshiring. Xato: ' + err.message);
             return false;
         }
     }
