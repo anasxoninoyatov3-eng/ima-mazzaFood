@@ -249,7 +249,14 @@ async def finish_order(query: CallbackQuery):
     for p_id, item in session['cart'].items():
         order_text += f"- {item['name']} x {item['count']} = {item['price'] * item['count']} so'm\n"
         total += item['price'] * item['count']
-    order_text += f"\n<b>Jami:</b> {total} so'm\n<b>Usul:</b> {session['type']}\n<b>To'lov:</b> {session['payment']}\n"
+        
+    type_map = {'delivery': 'Dostavka', 'pickup': 'Soboy'}
+    payment_map = {'cash': 'Naqd', 'click': 'Click'}
+    
+    usul_text = type_map.get(session.get('type', ''), session.get('type', ''))
+    tolov_text = payment_map.get(session.get('payment', ''), session.get('payment', ''))
+        
+    order_text += f"\n<b>Jami:</b> {total} so'm\n<b>Usul:</b> {usul_text}\n<b>To'lov:</b> {tolov_text}\n"
     
     # Xavfsiz ism va username
     full_name = str(query.from_user.full_name).replace('<', '').replace('>', '')

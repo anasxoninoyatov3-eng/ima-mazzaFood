@@ -195,13 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const imgEl = card.querySelector('.card-media img');
         const btn = card.querySelector('.add-btn');
         const originalSizeSel = card.querySelector('.size-select');
-        
+
         if (!btn || !itemDetailsModal) return;
 
         const baseTitle = titleEl ? titleEl.textContent : '';
         const baseDesc = descEl ? descEl.textContent : '';
         const imgSrc = imgEl ? imgEl.src : '';
-        
+
         currentItemData = {
             id: btn.dataset.id,
             name: btn.dataset.name || baseTitle,
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Ingredients / Tarkibi logic
         itemDetailsIngredientsList.innerHTML = '';
-        
+
         // Find prefix
         let prefixMatch = currentItemData.id.match(/^([a-z]+)/);
         let prefix = prefixMatch ? prefixMatch[1] : '';
@@ -251,10 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const opt = itemDetailsSizeSelect.options[itemDetailsSizeSelect.selectedIndex];
                 selectedLabel = opt.dataset.label || opt.text || '';
             }
-            
+
             // Try to find specific burger tarkibi, or fallback to prefix base tarkibi
-            const tarkibList = (prefix === 'bg' && tarkibiMap[selectedLabel]) ? tarkibiMap[selectedLabel] : 
-                               (tarkibiMap[selectedLabel] || baseTarkibMap[prefix] || ['Maxsus tayyorlangan']);
+            const tarkibList = (prefix === 'bg' && tarkibiMap[selectedLabel]) ? tarkibiMap[selectedLabel] :
+                (tarkibiMap[selectedLabel] || baseTarkibMap[prefix] || ['Maxsus tayyorlangan']);
 
             tarkibList.forEach((ingName, index) => {
                 const id = `ing_${prefix}_${Math.random().toString(36).substring(7)}_${index}`;
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button type="button" class="ing-btn ing-btn-plus ing-plus" data-id="${id}">+</button>
                     </div>
                 `;
-                
+
                 const minusBtn = div.querySelector('.ing-minus');
                 const plusBtn = div.querySelector('.ing-plus');
                 const qtySpan = div.querySelector('.ing-qty');
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let q = parseInt(qtySpan.textContent);
                     if (q > 0) {
                         qtySpan.textContent = q - 1;
-                        if(q - 1 === 0) {
+                        if (q - 1 === 0) {
                             div.style.opacity = '0.5';
                         }
                     }
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     qtySpan.textContent = q + 1;
                     div.style.opacity = '1';
                 });
-                
+
                 itemDetailsIngredientsList.appendChild(div);
             });
             updateItemDetailsTotal();
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let finalPrice = currentItemData.basePrice;
             let sizeLabel = '';
-            
+
             if (itemDetailsSizeSelect && itemDetailsSizeSelect.options.length > 0) {
                 const opt = itemDetailsSizeSelect.options[itemDetailsSizeSelect.selectedIndex];
                 finalPrice = parseFloat(opt.value) || finalPrice;
@@ -341,19 +341,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let ingredientsStr = '';
             const selectedStrArray = [];
-            
+
             const qtys = itemDetailsIngredientsList.querySelectorAll('.ing-qty');
             qtys.forEach(span => {
                 const qty = parseInt(span.textContent) || 0;
                 const name = span.dataset.name;
-                
+
                 if (qty === 0) {
                     selectedStrArray.push(`${name}siz`);
                 } else if (qty > 1) {
                     selectedStrArray.push(`Qo'shimcha ${name.toLowerCase()}`);
                 }
             });
-            
+
             if (selectedStrArray.length > 0) {
                 ingredientsStr = ` (${selectedStrArray.join(', ')})`;
             }
@@ -362,14 +362,14 @@ document.addEventListener('DOMContentLoaded', () => {
             finalPrice += 0;
 
             const displayName = sizeLabel ? `${currentItemData.name} (${sizeLabel})${ingredientsStr}` : `${currentItemData.name}${ingredientsStr}`;
-            
+
             // Har bir qo'shilgan mahsulot alohida bo'ladi (unique timestamp key)
             const key = `${currentItemData.id}__${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
             cart[key] = { id: key, name: displayName, price: finalPrice, qty: 1 };
             accountTotal += 1;
             localStorage.setItem('mazza_account_total', String(accountTotal));
-            
+
             updateCartUI();
             closeItemDetailsModalFn();
             openCart();
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.card').forEach(card => {
         const btn = card.querySelector('.add-btn');
         const media = card.querySelector('.card-media');
-        
+
         if (btn) btn.addEventListener('click', () => openItemDetailsModal(card));
         if (media) {
             media.style.cursor = 'pointer';
