@@ -244,15 +244,21 @@ async def finish_order(query: CallbackQuery):
     chat_id = query.message.chat.id
     session = get_session(chat_id)
     session['payment'] = query.data.replace('pay_', '')
-    order_text = "🚨 *Yangi Buyurtma!*\n\n"
+    order_text = "🚨 <b>Yangi Buyurtma!</b>\n\n"
     total = 0
     for p_id, item in session['cart'].items():
         order_text += f"- {item['name']} x {item['count']} = {item['price'] * item['count']} so'm\n"
         total += item['price'] * item['count']
-    order_text += f"\n*Jami:* {total} so'm\n*Usul:* {session['type']}\n*To'lov:* {session['payment']}\n"
-    order_text += f"*Xaridor:* {query.from_user.full_name} (@{query.from_user.username})"
+    order_text += f"\n<b>Jami:</b> {total} so'm\n<b>Usul:</b> {session['type']}\n<b>To'lov:</b> {session['payment']}\n"
+    
+    # Xavfsiz ism va username
+    full_name = str(query.from_user.full_name).replace('<', '').replace('>', '')
+    username = str(query.from_user.username).replace('<', '').replace('>', '')
+    order_text += f"<b>Xaridor:</b> {full_name} (@{username})"
+    
     try:
-        await admin_bot.send_message(ADMIN_CHAT_ID, order_text, parse_mode='Markdown')
+        await admin_bot.send_message(ADMIN_CHAT_ID, order_text, parse_mode='HTML')
+        logging.info("Admin bot successfully sent the order message.")
     except Exception as e:
         logging.error(f"Xabar yuborishda xato: {e}")
     await query.message.edit_text("✅ Buyurtma qabul qilindi! Rahmat.", reply_markup=None)
