@@ -22,7 +22,7 @@ app.post('/api/send-order', async (req, res) => {
     const { order } = req.body || {};
     if (!order || !order.name || !order.phone) return res.status(400).json({ ok: false, error: 'Missing order data' });
 
-    const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+    const BOT_TOKEN = "8429193461:AAEnBiGsVX4hKYVnKYCnI5ZdLvNg7_0jZdE";
     // Agar bir nechta odamga yubormoqchi bo'lsangiz, ID larni vergul bilan ajratib yozing
     // Masalan: ["5377787513", "9988776655"]
     const CHAT_IDS = [8283401187]; // process.env.TELEGRAM_CHAT_IDS ? process.env.TELEGRAM_CHAT_IDS.split(',') : [];

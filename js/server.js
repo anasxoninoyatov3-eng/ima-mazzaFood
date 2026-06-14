@@ -9,7 +9,7 @@ const https = require('https');
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8574329398:AAFmw3CaF7Ce2PeHvTwEBmRTmpRduoXMGug";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8429193461:AAEnBiGsVX4hKYVnKYCnI5ZdLvNg7_0jZdE";
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID || 8283401187;
 
 app.use(express.json());
@@ -43,6 +43,13 @@ app.post('/api/send-order', (req, res) => {
     lines.push('');
     const total = (typeof order.total === 'number') ? order.total.toLocaleString() : order.total || '0';
     lines.push(`Jami: ${total} so'm`);
+
+    if (order.delivery && order.delivery.method === 'zalda') {
+        lines.push('');
+        lines.push('buyurtma: ichkariga');
+    }
+    lines.push('');
+    lines.push('@kmazzafoodbot dan');
 
     const text = encodeURIComponent(lines.join('\n'));
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${text}`;

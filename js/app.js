@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allReviews = JSON.parse(localStorage.getItem('mazza_all_reviews') || '[]');
 
     // Admin bot token va chat id (review moderation uchun)
-    const REVIEW_BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc';
+    const REVIEW_BOT_TOKEN = '8429193461:AAEnBiGsVX4hKYVnKYCnI5ZdLvNg7_0jZdE';
     const REVIEW_ADMIN_CHAT = '5377787513';
 
     // Currency suffix detection (default empty, will detect "so'm" if menu uses som)
@@ -863,6 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const m = method || 'standard';
             let fee = 0; let eta = 0;
             if (m === 'pickup') { fee = 0; eta = 10; }
+            else if (m === 'zalda') { fee = 0; eta = 5; }
             else if (m === 'express') { fee = Math.max(5000, Math.round(subtotal * 0.05)); eta = 20; }
             else { fee = subtotal >= 100000 ? 0 : 10000; eta = 30; }
             return { fee, eta, method: m };
@@ -875,16 +876,34 @@ document.addEventListener('DOMContentLoaded', () => {
             wrapper.id = 'deliveryOptions';
             wrapper.style.marginTop = '12px';
             wrapper.innerHTML = `
-                <div class="delivery-label">Yetkazib berish turi</div>
-                <select id="deliveryMethod" aria-label="Delivery method">
-                    <option value="standard">Standard — odatda 30-45 daqiqa</option>
-                    <option value="express">Express — tezroq (qo'shimcha to'lov)</option>
-                    <option value="pickup">Olib ketish — do'kon ichida (0 so'm)</option>
-                </select>
+                <div class="delivery-label" style="margin-bottom:8px;font-weight:600;">Buyurtma turi</div>
+                <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+                    <button type="button" class="btn d-btn active" data-val="standard" style="flex:1; padding:8px; border:1px solid #ff6b35; background:#ff6b35; color:#fff; border-radius:8px;">Yetkazib berish</button>
+                    <button type="button" class="btn d-btn" data-val="pickup" style="flex:1; padding:8px; border:1px solid #ccc; background:#fff; color:#333; border-radius:8px;">Olib ketish</button>
+                    <button type="button" class="btn d-btn" data-val="zalda" style="flex:1; padding:8px; border:1px solid #ccc; background:#fff; color:#333; border-radius:8px;">Zalda</button>
+                </div>
+                <input type="hidden" id="deliveryMethod" value="standard">
             `;
             left.appendChild(wrapper);
 
             const sel = wrapper.querySelector('#deliveryMethod');
+            const dBtns = wrapper.querySelectorAll('.d-btn');
+            dBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    dBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.background = '#fff';
+                        b.style.color = '#333';
+                        b.style.borderColor = '#ccc';
+                    });
+                    btn.classList.add('active');
+                    btn.style.background = '#ff6b35';
+                    btn.style.color = '#fff';
+                    btn.style.borderColor = '#ff6b35';
+                    sel.value = btn.dataset.val;
+                    sel.dispatchEvent(new Event('change'));
+                });
+            });
             const addressInput = document.getElementById('customerAddress');
             const addressLabel = document.querySelector('label[for="customerAddress"]');
 
@@ -893,7 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.__mazza_current_delivery = info;
 
                 // Toggle address visibility
-                if (sel.value === 'pickup') {
+                if (sel.value === 'pickup' || sel.value === 'zalda') {
                     if (addressInput) {
                         addressInput.style.display = 'none';
                         addressInput.required = false;
@@ -999,10 +1018,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const phone = phoneEl ? phoneEl.value.trim() : '';
             let address = addrEl ? addrEl.value.trim() : '';
 
-            // If pickup, address is not required
+            // If pickup or zalda, address is not required
             const delivery = window.__mazza_current_delivery || { fee: 0, eta: 0, method: 'standard' };
             if (delivery.method === 'pickup') {
                 address = 'Olib ketish'; // Set default text for pickup
+            } else if (delivery.method === 'zalda') {
+                address = 'Ichkarida (Zalda)';
             }
 
             // Validate name: only letters and spaces
@@ -1065,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Send order directly to Telegram API (works from Netlify static hosting)
     async function sendOrderToBackend(order) {
-        const BOT_TOKEN = "8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc";
+        const BOT_TOKEN = "8429193461:AAEnBiGsVX4hKYVnKYCnI5ZdLvNg7_0jZdE";
         const CHAT_ID = "8283401187";
 
         // Build plain text message (no HTML/Markdown to avoid parse errors)
@@ -1086,7 +1107,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const delivery = order.delivery || {};
-        const dm = delivery.method === 'pickup' ? 'Olib ketish' : (delivery.method || 'standard');
+        let dm = delivery.method || 'standard';
+        if (delivery.method === 'pickup') dm = 'Olib ketish';
+        if (delivery.method === 'zalda') dm = 'Zalda';
         text += '\n🚚 Yetkazib berish: ' + dm;
         if (delivery.fee) text += ' (' + formatPrice(delivery.fee) + ')';
 
@@ -1097,6 +1120,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const d = new Date(order.ts || Date.now());
         const pad = function (n) { return n.toString().padStart(2, '0'); };
         text += '\n🕒 Vaqt: ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+
+        if (delivery.method === 'zalda') {
+            text += '\n\nbuyurtma: ichkariga\n\n@kmazzafoodbot dan';
+        } else {
+            text += '\n\n@kmazzafoodbot dan';
+        }
 
         const url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage';
 
@@ -1262,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fikrlarni TO'G'RIDAN-TO'G'RI Telegram API orqali yuborish (backend shart emas)
     async function sendReviewToTelegram(entry) {
-        const BOT_TOKEN = '8521051511:AAGqsWjQ82kecjN6reYPZ3-x3WUGXEb6jlc';
+        const BOT_TOKEN = '8429193461:AAEnBiGsVX4hKYVnKYCnI5ZdLvNg7_0jZdE';
         const CHAT_ID = '8283401187';
 
         const stars = '⭐'.repeat(entry.rating);
