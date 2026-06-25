@@ -4,7 +4,8 @@
   "description": "Mazza Food small demo server to forward orders to Telegram",
   "main": "js/server.js",
   "scripts": {
-    "start": "node js/server.js"
+    "start": "node js/server.js",
+    "dev": "node js/server.js"
   },
   "keywords": [],
   "author": "",

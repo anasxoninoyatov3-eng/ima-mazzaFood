@@ -17,7 +17,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-TOKEN = '8996584942:AAE6zOqM6uM08xpsPicJ0_NsHzNz_fopM1M'
+TOKEN = '8633439971:AAFR1WG5SyYnpEuwMVhQMC20LVyYSB4pSjE'
 ADMIN_BOT_TOKEN = '8429193461:AAEnBiGsVX4hKYVnKYCnI5ZdLvNg7_0jZdE'
 ADMIN_CHAT_ID = 8283401187 
 SMS_API_KEY = "b84499890e0e572ffb6a7fb0952aee0d1d73254806bb183b"

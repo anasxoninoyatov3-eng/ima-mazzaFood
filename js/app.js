@@ -256,47 +256,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const tarkibList = (prefix === 'bg' && tarkibiMap[selectedLabel]) ? tarkibiMap[selectedLabel] :
                 (tarkibiMap[selectedLabel] || baseTarkibMap[prefix] || ['Maxsus tayyorlangan']);
 
-            tarkibList.forEach((ingName, index) => {
-                const id = `ing_${prefix}_${Math.random().toString(36).substring(7)}_${index}`;
-                const div = document.createElement('div');
-                div.className = 'ing-item-add';
-                // Setup interactive UI with default qty = 1
-                div.innerHTML = `
-                    <div class="ing-item-info">
-                        <span class="ing-item-name">${ingName}</span>
-                        <span class="ing-item-price ing-free-badge">Bepul</span>
-                    </div>
-                    <div class="ing-item-controls">
-                        <button type="button" class="ing-btn ing-btn-minus ing-minus" data-id="${id}">−</button>
-                        <span class="ing-qty-display ing-qty" id="qty_${id}" data-id="${id}" data-price="0" data-name="${ingName}">1</span>
-                        <button type="button" class="ing-btn ing-btn-plus ing-plus" data-id="${id}">+</button>
-                    </div>
-                `;
+            const p = document.createElement('p');
+            p.style.cssText = 'margin-bottom: 12px; font-size: 0.95rem; color: #555; line-height: 1.4; font-weight: 500;';
+            p.textContent = tarkibList.join(', ');
+            itemDetailsIngredientsList.appendChild(p);
 
-                const minusBtn = div.querySelector('.ing-minus');
-                const plusBtn = div.querySelector('.ing-plus');
-                const qtySpan = div.querySelector('.ing-qty');
+            const inputComment = document.createElement('input');
+            inputComment.type = 'text';
+            inputComment.id = 'itemCommentInput';
+            inputComment.placeholder = 'Izoh qoldiring, masalan: Ketchupsiz';
+            inputComment.style.cssText = 'width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none; margin-bottom: 5px; box-sizing: border-box; font-family: inherit; transition: border-color 0.2s ease;';
+            inputComment.addEventListener('focus', () => { inputComment.style.borderColor = '#ff6b35'; });
+            inputComment.addEventListener('blur', () => { inputComment.style.borderColor = '#ddd'; });
 
-                minusBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    let q = parseInt(qtySpan.textContent);
-                    if (q > 0) {
-                        qtySpan.textContent = q - 1;
-                        if (q - 1 === 0) {
-                            div.style.opacity = '0.5';
-                        }
-                    }
-                });
+            itemDetailsIngredientsList.appendChild(inputComment);
 
-                plusBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    let q = parseInt(qtySpan.textContent);
-                    qtySpan.textContent = q + 1;
-                    div.style.opacity = '1';
-                });
-
-                itemDetailsIngredientsList.appendChild(div);
-            });
             updateItemDetailsTotal();
         }
 
@@ -340,22 +314,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let ingredientsStr = '';
-            const selectedStrArray = [];
 
-            const qtys = itemDetailsIngredientsList.querySelectorAll('.ing-qty');
-            qtys.forEach(span => {
-                const qty = parseInt(span.textContent) || 0;
-                const name = span.dataset.name;
-
-                if (qty === 0) {
-                    selectedStrArray.push(`${name}siz`);
-                } else if (qty > 1) {
-                    selectedStrArray.push(`Qo'shimcha ${name.toLowerCase()}`);
-                }
-            });
-
-            if (selectedStrArray.length > 0) {
-                ingredientsStr = ` (${selectedStrArray.join(', ')})`;
+            const commentInput = document.getElementById('itemCommentInput');
+            if (commentInput && commentInput.value.trim() !== '') {
+                ingredientsStr = ` (${commentInput.value.trim()})`;
             }
 
             // Always free, no extra price from ingredients
